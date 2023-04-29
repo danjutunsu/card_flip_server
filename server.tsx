@@ -7,6 +7,20 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const dbpass = process.env.DB_PASSWORD
+const io = require('socket.io')();
+
+io.on('connection', (socket) => {
+  console.log('a user connected');
+  // handle events from this client socket here
+});
+
+const server = require('http').createServer();
+io.attach(server);
+const port = 3002;
+server.listen(port, () => {
+  console.log(`Socket.IO server listening on port ${port}`);
+});
+
 
 const pool = new Pool({
     user: 'postgres',
@@ -15,18 +29,6 @@ const pool = new Pool({
     password: dbpass,
     port: 5432, // the default PostgreSQL port
   });
-  
-  // pool.query(
-  //   'INSERT INTO users (username, email, password) VALUES ($1, $2, $3)',
-  //   ['Dan', 'johndoe@example.com', 'password123'],
-  //   (error, results) => {
-  //     if (error) {
-  //       console.error(error);
-  //     } else {
-  //       console.log('New user added successfully');
-  //     }
-  //   }
-  // );  
 
   pool.query('SELECT * FROM users', (err, res) => {
     if (err) {
@@ -52,6 +54,30 @@ app.get('/api/questions', async (req, res) => {
     res.status(500).send('An error occurred while retrieving the questions');
   }
 });
+
+app.post('/api/reset', async (req, res) => {
+  const { userId, questionId, userGuess } = req.body;
+
+  try {
+    const client = await pool.connect();
+    const queryUpdatePoints = `
+      UPDATE points
+      SET
+        correct_round = 0,
+        incorrect_round = 0,
+        total_round = 0
+      WHERE user_id = $1;
+    `;
+    const valuesUpdatePoints = [userId];
+    const resultUpdatePoints = await client.query(queryUpdatePoints, valuesUpdatePoints);
+    client.release();
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred while saving the guess');
+  }
+});
+
 app.post('/api/guesses', async (req, res) => {
   const { userId, questionId, userGuess } = req.body;
 
@@ -71,8 +97,8 @@ app.post('/api/guesses', async (req, res) => {
 
     if (resultUserPoints.rows.length === 0) {
       const queryInsertPoints = `
-        INSERT INTO points (user_id, points, total_guess, total_correct, total_incorrect)
-        VALUES ($1, 1, 1, 1, 0);
+        INSERT INTO points (user_id, points, total_guess, total_correct, total_incorrect, correct_round, incorrect_round)
+        VALUES ($1, 1, 1, 1, 0, 1, 0);
       `;
       const valuesInsertPoints = [userId];
       await client.query(queryInsertPoints, valuesInsertPoints);
@@ -82,7 +108,9 @@ app.post('/api/guesses', async (req, res) => {
         SET
           points = points + 1,
           total_guess = total_guess + 1,
-          total_correct = total_correct + 1
+          total_correct = total_correct + 1,
+          correct_round = correct_round + 1,
+          total_round = total_round + 1
         WHERE user_id = $1
           AND $2 = $3;
       `;
@@ -94,7 +122,9 @@ app.post('/api/guesses', async (req, res) => {
           UPDATE points
           SET
             total_guess = total_guess + 1,
-            total_incorrect = total_incorrect + 1
+            total_incorrect = total_incorrect + 1,
+            incorrect_round = incorrect_round + 1,
+            total_round = total_round + 1
           WHERE user_id = $1;
         `;
         const valuesUpdateIncorrect = [userId];
@@ -115,9 +145,20 @@ app.get('/api/points', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM points WHERE user_id = $1', [userId]);
     
-    console.log("USER " + userId)
-    console.log(rows)
+    // console.log("USER " + userId)
+    // console.log(rows)
     res.json(rows)
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred while retrieving the points');
+  }
+});
+
+app.get('/api/username', async (req, res) => {
+  const { userId } = req.query;
+  try {
+    const username = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+    res.json(username)
   } catch (error) {
     console.error(error);
     res.status(500).send('An error occurred while retrieving the points');
@@ -197,24 +238,12 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-// app.get('/api/users', async (req, res) => {
-//   try {
-//     const { uId, uName } = req.body;
-//     const user = await User.find({ userName: uName });
-//     res.json(user);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send('An error occurred while retrieving the questions');
-//   }
-//   });
-
-
 app.get('/api/user', async (req, res) => {
   try {
     const { uId } = req.query;
     const result = await pool.query('SELECT * FROM users WHERE "id" = $1', [uId]);
     const user = result.rows[0];
-    console.log(`USER: ${user}`);
+    // console.log(`USER: ${user}`);
     res.json(user);
   } catch (err) {
     console.error(err);
@@ -265,15 +294,12 @@ app.post('/api/login', [
   console.log(process.env.JWT_SECRET)
   // Generate a JWT token
   const JWT_SECRET = process.env.JWT_SECRET;
-  const token = jwt.sign({ username }, process.env.JWT_SECRET);
+  const token = jwt.sign({ id: user.id, username }, process.env.JWT_SECRET);
 
-  // Return the token to the frontend
-  res.json({ token });
+  // Return the token and user ID to the frontend
+  res.json({ token, userId: user.id });
 });
 
-
-
-app.listen(3001, () => console.log('Server started on port 3001'));
 
 async function getUserByUsername(username) {
   const client = await pool.connect();
@@ -287,3 +313,6 @@ async function getUserByUsername(username) {
     client.release();
   }
 }
+
+app.listen(3001, () => console.log('Server started on port 3001'));
+
