@@ -9,12 +9,16 @@ const { body, validationResult } = require('express-validator');
 const dbpass = process.env.DB_PASSWORD
 const io = require('socket.io')();
 
+app.use(cors()); // Allow cross-origin requests
+
+const server = require('http').createServer();
+
+
 io.on('connection', (socket) => {
   console.log('a user connected');
   // handle events from this client socket here
 });
 
-const server = require('http').createServer();
 io.attach(server);
 const port = 3002;
 server.listen(port, () => {
