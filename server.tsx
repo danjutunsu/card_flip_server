@@ -7,24 +7,46 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const dbpass = process.env.DB_PASSWORD
-const io = require('socket.io')();
+const { WebSocketServer } = require('ws')
 
 app.use(cors()); // Allow cross-origin requests
 
-const server = require('http').createServer();
+const server = require('http').createServer(app);
 
+const clients = new Array
 
-io.on('connection', (socket) => {
-  console.log('a user connected');
-  // handle events from this client socket here
+const wsServer = new WebSocketServer({ server });
+
+wsServer.on('connection', function connection(ws, req) {
+  const userId = req.url.split('=')[1];
+  ws.userId = userId;
+  console.log(`User ${userId} connected to the WebSocket server.`);
+  // Store the new client's socket object in the clients array
+  clients.push(ws);
+
+  // Handle messages from the client
+  ws.on('message', function incoming(message) {
+    console.log('received: %s', message);
+  });
+
+  // Handle messages from the client
+  ws.on('message', function incoming(message) {
+    console.log('User: ', ws, ' logged in');
+  });
+
+  // Handle the WebSocket connection being closed
+  ws.on('close', function close() {
+    console.log('WebSocket connection closed');
+
+    // Remove the client's socket object from the clients array
+    clients.splice(clients.indexOf(ws), 1);
+  });
 });
 
-io.attach(server);
 const port = 3002;
 server.listen(port, () => {
-  console.log(`Socket.IO server listening on port ${port}`);
+  console.log(`WebSocket server listening on port ${port}`);
 });
-
 
 const pool = new Pool({
     user: 'postgres',
