@@ -18,12 +18,20 @@ const clients = new Array
 const wsServer = new WebSocketServer({ server });
 
 wsServer.on('connection', function connection(ws, req) {
+  console.log(`Client list before connection:`)
+    clients.forEach(element => {
+      console.log(element)
+    });
   const userId = req.url.split('=')[1];
   ws.userId = userId;
   console.log(`User ${userId} connected to the WebSocket server.`);
   // Store the new client's socket object in the clients array
   clients.push(ws);
 
+  console.log(`Client list after connection:`)
+    clients.forEach(element => {
+      console.log(element)
+    });
   // Handle messages from the client
   ws.on('message', function incoming(message) {
     console.log('received: %s', message);
@@ -31,13 +39,16 @@ wsServer.on('connection', function connection(ws, req) {
 
   // Handle messages from the client
   ws.on('message', function incoming(message) {
-    console.log('User: ', ws, ' logged in');
+    console.log('User', ws.userId, 'logged in');
   });
 
   // Handle the WebSocket connection being closed
   ws.on('close', function close() {
     console.log('WebSocket connection closed');
-
+    console.log(`Client list after close:`)
+    clients.forEach(element => {
+      console.log(element)
+    });
     // Remove the client's socket object from the clients array
     clients.splice(clients.indexOf(ws), 1);
   });
@@ -82,7 +93,7 @@ app.get('/api/questions', async (req, res) => {
 });
 
 app.post('/api/reset', async (req, res) => {
-  const { userId, questionId, userGuess } = req.body;
+  const { userId } = req.body;
 
   try {
     const client = await pool.connect();
