@@ -20,17 +20,20 @@ const wsServer = new WebSocketServer({ server });
 wsServer.on('connection', function connection(ws, req) {
   console.log(`Client list before connection:`)
     clients.forEach(element => {
-      console.log(element)
+      console.log(element.userId)
     });
   const userId = req.url.split('=')[1];
   ws.userId = userId;
   console.log(`User ${userId} connected to the WebSocket server.`);
   // Store the new client's socket object in the clients array
-  clients.push(ws);
+  if (!clients.includes(ws)) {
+    console.log("adding websocket " + ws)
+    clients.push(ws);
+  }
 
   console.log(`Client list after connection:`)
     clients.forEach(element => {
-      console.log(element)
+      console.log(element.userId)
     });
   // Handle messages from the client
   ws.on('message', function incoming(message) {
@@ -47,7 +50,7 @@ wsServer.on('connection', function connection(ws, req) {
     console.log('WebSocket connection closed');
     console.log(`Client list after close:`)
     clients.forEach(element => {
-      console.log(element)
+      console.log(element.userId)
     });
     // Remove the client's socket object from the clients array
     clients.splice(clients.indexOf(ws), 1);
@@ -79,6 +82,105 @@ let data;
 
 app.use(express.json())
 app.use(cors())
+
+app.get('/api/clients', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM games WHERE player1_id IS NULL or player2_id IS NULL');
+    if (result.rows > 0) {
+      console.log(`/api/clients - Step 1`)
+      res.json(result);
+      console.log(`result for game rows: ${result}`)
+    } else if (result.rows.length === 0) {
+      console.log(`/api/clients - Step 2`)
+
+      const gameInsert =
+      `INSERT INTO games (player1_id, game_status)
+      VALUES ($1, 0)`
+      const userId = req.query.userId;
+      const valuesInsertPoints = [userId];
+      await pool.query(gameInsert, valuesInsertPoints);
+    } else {
+      console.log(`/api/clients - Step 3`)
+
+      // Get the first row from the result where player1_id or player2_id is null
+      const gameRow = result.rows.find(row => row.player1_id === null || row.player2_id === null);
+      // Update the game row with the userId
+      const userId = req.query.userId;
+      if (!userId) throw new Error('User ID is missing');
+      const playerIdToUpdate = gameRow.player1_id === null ? 'player1_id' : 'player2_id';
+      const gameUpdate =
+        `UPDATE games SET ${playerIdToUpdate} = $1 WHERE id = $2`;
+      await pool.query(gameUpdate, [userId, gameRow.id]);
+    }
+  } catch (err) {
+    console.log(err)
+    console.log("Error while trying to find empty game")
+  }
+
+  // try {
+  //   console.log(`Fetching client list for front-end:`)
+  //   clients.forEach(element => {
+  //     console.log(element.userId)
+  //   });
+  //   res.json(clients);
+  // } catch (err) {
+  //   console.log(err)
+  //   res.status(500).send('An error occurred while fetching client list')
+  // }
+});
+
+app.get('/api/lobby', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const queryGetUsers = `
+      SELECT user_id, username, status FROM lobby;
+    `;
+    const resultGetUsers = await client.query(queryGetUsers);
+    client.release();
+    const users = resultGetUsers.rows;
+    res.json(users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred while retrieving the lobby users');
+  }
+});
+
+
+app.post('/api/lobby', async (req, res) => {
+  const { userId } = req.body;
+  try {
+    const username = await getUsernameByID(userId)
+    const client = await pool.connect();
+    const queryUpdatePoints = `
+    INSERT INTO lobby (user_id, username, status)
+    VALUES ($1, $2, 'Idle');
+    `;
+    const valuesUpdatePoints = [userId, username];
+    const resultUpdatePoints = await client.query(queryUpdatePoints, valuesUpdatePoints);
+    client.release();
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred while adding the user to lobby');
+  }
+});
+
+app.delete('/api/lobby', async (req, res) => {
+  const { userId } = req.query;
+  try {
+    const client = await pool.connect();
+    const queryDeleteUser = `
+      DELETE FROM lobby WHERE user_id = $1;
+    `;
+    const valuesDeleteUser = [userId];
+    await client.query(queryDeleteUser, valuesDeleteUser);
+    client.release();
+    res.sendStatus(200);
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
 
 app.get('/api/questions', async (req, res) => {
   try {
@@ -333,6 +435,21 @@ app.post('/api/login', [
   const JWT_SECRET = process.env.JWT_SECRET;
   const token = jwt.sign({ id: user.id, username }, process.env.JWT_SECRET);
 
+  try {
+    const client = await pool.connect();
+    const queryUpdatePoints = `
+    INSERT INTO lobby (user_id, username, status)
+    VALUES ($1, $2, 'Idle');
+    `;
+
+    const valuesUpdatePoints = [user.id, username];
+    const resultUpdatePoints = await client.query(queryUpdatePoints, valuesUpdatePoints);
+    client.release()
+  }
+  catch (error) {
+    console.error(error);
+  }
+
   // Return the token and user ID to the frontend
   res.json({ token, userId: user.id });
 });
@@ -342,6 +459,19 @@ async function getUserByUsername(username) {
   const client = await pool.connect();
   try {
     const result = await client.query('SELECT * FROM users WHERE username = $1', [username]);
+    if (result.rows.length === 0) {
+      return null;
+    }
+    return result.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+async function getUsernameByID(id) {
+  const client = await pool.connect();
+  try {
+    const result = await client.query('SELECT * FROM users WHERE id = $1', [id]);
     if (result.rows.length === 0) {
       return null;
     }
