@@ -15,6 +15,8 @@ const server = require('http').createServer(app);
 
 const clients = new Array
 
+const readyClients = new Array
+
 const wsServer = new WebSocketServer({ server });
 
 wsServer.on('connection', function connection(ws, req) {
@@ -30,11 +32,19 @@ wsServer.on('connection', function connection(ws, req) {
     console.log("adding websocket " + ws)
     clients.push(ws);
   }
+  
+  if (!readyClients.includes(ws.userId)) {
+    readyClients.push(ws.userId)
+  }
 
   console.log(`Client list after connection:`)
     clients.forEach(element => {
       console.log(element.userId)
     });
+  console.log(`Ready Clients: ${readyClients}`)
+  readyClients.forEach(element => {
+    console.log(element);
+  })
   // Handle messages from the client
   ws.on('message', function incoming(message) {
     console.log('received: %s', message);
@@ -53,7 +63,7 @@ wsServer.on('connection', function connection(ws, req) {
       console.log(element.userId)
     });
     // Remove the client's socket object from the clients array
-    clients.splice(clients.indexOf(ws), 1);
+    clients.splice(clients.indexOf(ws));
   });
 });
 
@@ -138,12 +148,14 @@ app.get('/api/lobby', async (req, res) => {
     const resultGetUsers = await client.query(queryGetUsers);
     client.release();
     const users = resultGetUsers.rows;
-    res.json(users);
+    const allUsersReady = users.every(user => user.status === 'Ready');
+    res.json({ users, allUsersReady }); // Return users and flag indicating if all users are ready
   } catch (error) {
     console.error(error);
     res.status(500).send('An error occurred while retrieving the lobby users');
   }
 });
+
 
 
 app.post('/api/lobby', async (req, res) => {
@@ -164,6 +176,25 @@ app.post('/api/lobby', async (req, res) => {
     res.status(500).send('An error occurred while adding the user to lobby');
   }
 });
+
+app.put('/api/lobby', async (req, res) => {
+  const { userId } = req.query;
+  try {
+    const client = await pool.connect();
+    const updatedUser = `
+    UPDATE lobby SET status = CASE WHEN status = 'Idle' THEN 'Ready' ELSE 'Idle' END WHERE user_id = $1 RETURNING *;
+    `;
+    const valueUpdateUser = [userId];
+    const result = await client.query(updatedUser, valueUpdateUser);
+    client.release();
+    res.status(200).json(result.rows[0]); // Return updated user object with new status
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
+
+
 
 app.delete('/api/lobby', async (req, res) => {
   const { userId } = req.query;
