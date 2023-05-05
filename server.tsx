@@ -93,25 +93,24 @@ let data;
 app.use(express.json())
 app.use(cors())
 
-app.get('/api/clients', async (req, res) => {
+app.get('/api/games', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM games WHERE player1_id IS NULL or player2_id IS NULL');
-    if (result.rows > 0) {
+    if (result.rows.length > 0) {
       console.log(`/api/clients - Step 1`)
       res.json(result);
       console.log(`result for game rows: ${result}`)
     } else if (result.rows.length === 0) {
       console.log(`/api/clients - Step 2`)
-
-      const gameInsert =
-      `INSERT INTO games (player1_id, game_status)
-      VALUES ($1, 0)`
+      
       const userId = req.query.userId;
       const valuesInsertPoints = [userId];
+      const gameInsert =
+      `INSERT INTO games (player1_id, game_status, turn_id)
+      VALUES ($1, 0, 1)`
       await pool.query(gameInsert, valuesInsertPoints);
     } else {
       console.log(`/api/clients - Step 3`)
-
       // Get the first row from the result where player1_id or player2_id is null
       const gameRow = result.rows.find(row => row.player1_id === null || row.player2_id === null);
       // Update the game row with the userId
@@ -119,24 +118,15 @@ app.get('/api/clients', async (req, res) => {
       if (!userId) throw new Error('User ID is missing');
       const playerIdToUpdate = gameRow.player1_id === null ? 'player1_id' : 'player2_id';
       const gameUpdate =
-        `UPDATE games SET ${playerIdToUpdate} = $1 WHERE id = $2`;
-      await pool.query(gameUpdate, [userId, gameRow.id]);
-    }
+      `UPDATE games SET ${playerIdToUpdate} = $1,
+      turn_id = $2
+      WHERE id = $3`;
+      await pool.query(gameUpdate, [userId, 1, gameRow.id]);
+      }
   } catch (err) {
     console.log(err)
     console.log("Error while trying to find empty game")
   }
-
-  // try {
-  //   console.log(`Fetching client list for front-end:`)
-  //   clients.forEach(element => {
-  //     console.log(element.userId)
-  //   });
-  //   res.json(clients);
-  // } catch (err) {
-  //   console.log(err)
-  //   res.status(500).send('An error occurred while fetching client list')
-  // }
 });
 
 app.get('/api/lobby', async (req, res) => {
