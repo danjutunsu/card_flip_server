@@ -129,6 +129,24 @@ app.get('/api/games', async (req, res) => {
   }
 });
 
+app.put('/api/games', async (req, res) => {
+  const { userId, questionId, answer, answered, count } = req.body;
+  try {
+    const client = await pool.connect();
+    const queryUpdateGames = `
+    UPDATE games SET turn_id = $4 WHERE player1_id = $1 OR player2_id = $1
+    ${answered === count ? `AND (player1_id IS NOT NULL AND player2_id IS NOT NULL)` : ''}
+  `;
+  const valuesInsertAnswer = [userId, questionId, answer, userId, '7'];
+  await client.query(queryUpdateGames, valuesInsertAnswer);
+    client.release();
+    res.json({ success: true }); 
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred while saving the answer');
+  }
+});
+
 app.get('/api/lobby', async (req, res) => {
   try {
     const client = await pool.connect();
@@ -297,6 +315,27 @@ app.post('/api/guesses', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send('An error occurred while saving the guess');
+  }
+});
+
+app.post('/api/answers', async (req, res) => {
+  const { userId, questionId, answer, answered, count } = req.body;
+
+  try {
+    const client = await pool.connect();
+    const queryInsertAnswer = `
+    INSERT INTO answers (user_id, question_id, answer)
+    VALUES ($1, $2, $3)
+    ON CONFLICT (user_id, question_id)
+    DO UPDATE SET answer = $3;
+    `;
+    const valuesInsertAnswer = [userId, questionId, answer];
+    await client.query(queryInsertAnswer, valuesInsertAnswer);
+    client.release();
+    res.json({ success: true }); 
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred while saving the answer');
   }
 });
 
