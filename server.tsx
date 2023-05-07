@@ -74,7 +74,7 @@ server.listen(port, () => {
 
 const pool = new Pool({
     user: 'postgres',
-    host: 'localhost',
+    host: '10.0.0.193',
     database: 'trivia',
     password: dbpass,
     port: 5432, // the default PostgreSQL port
@@ -176,7 +176,28 @@ app.get('/api/games/turn', async (req, res) => {
   }
 });
 
-
+app.put('/api/games/turn', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const queryUpdateTurn = `
+    UPDATE games
+    SET turn_id = 
+      CASE 
+          WHEN turn_id = player1_id THEN player2_id 
+          WHEN turn_id = player2_id THEN player1_id 
+          ELSE turn_id 
+      END
+    WHERE id = 25;
+    `;
+  await client.query(queryUpdateTurn);
+    client.release();
+    console.log('worked')
+    res.json({ success: true }); 
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred while saving the answer');
+  }
+});
 
 app.put('/api/games', async (req, res) => {
   const { userId, questionId, answer, answered, count } = req.body;
