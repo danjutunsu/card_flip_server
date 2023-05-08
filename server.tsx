@@ -20,21 +20,31 @@ const readyClients = new Array
 const wsServer = new WebSocketServer({ server });
 
 wsServer.on('connection', function connection(ws, req) {
-
   let currentStatus = { value: '' }
+  let hasUserId = false;
+
+  const userId = req.url.split('=')[1];
+  ws.userId = userId;
+
+  clients.forEach((element) => {
+    if (element.userId === ws.userId) {
+      hasUserId = true;
+    }
+  });
+  
+  if (hasUserId) {
+    console.log(`At least one websocket contains the userId ${ws.userId}`);
+  } else {
+    console.log(`None of the websockets contain the userId ${ws.userId}`);
+    clients.push(ws);
+  }
 
   console.log(`Client list before connection:`)
     clients.forEach(element => {
       console.log(element.userId)
-    });
-  const userId = req.url.split('=')[1];
-  ws.userId = userId;
+  });
+
   console.log(`User ${userId} connected to the WebSocket server.`);
-  // Store the new client's socket object in the clients array
-  if (!clients.includes(ws)) {
-    console.log("adding websocket " + ws)
-    clients.push(ws);
-  }
   
   if (!readyClients.includes(ws.userId)) {
     readyClients.push(ws.userId)
@@ -43,26 +53,27 @@ wsServer.on('connection', function connection(ws, req) {
   console.log(`Client list after connection:`)
     clients.forEach(element => {
       console.log(element.userId)
-    });
+  });
+
   console.log(`Ready Clients: ${readyClients}`)
   readyClients.forEach(element => {
     console.log(element);
   })
+
   // Handle messages from the client
-  ws.on('message', function incoming(message) {
-    console.log('received: %s', message);
+  // Handle messages from the client
+ws.on('message', function incoming(message) {
+  console.log('received: %s', message);
 
-    const data = JSON.parse(message)
+  const data = JSON.parse(message)
 
-    clients.forEach((client) => {
-      // client.send(JSON.stringify(currentStatus))
+  clients.forEach((client) => {
+    const user_status_update = data.payload;
 
-      // Send a console message back to the client
-      const user_status_update = data
+    client.send(JSON.stringify({ user_status_update }))
+  })
+});
 
-      client.send(JSON.stringify({ user_status_update }))
-    })
-  });
 
   // Handle the WebSocket connection being closed
   ws.on('close', function close() {
@@ -71,6 +82,7 @@ wsServer.on('connection', function connection(ws, req) {
     clients.forEach(element => {
       console.log(element.userId)
     });
+    console.log('splicing ' + clients.indexOf(ws))
     // Remove the client's socket object from the clients array
     clients.splice(clients.indexOf(ws));
   });
@@ -575,10 +587,11 @@ app.post('/api/login', [
   try {
     const client = await pool.connect();
     const queryUpdatePoints = `
-    INSERT INTO lobby (user_id, username, status)
-    VALUES ($1, $2, 'Idle');
+      INSERT INTO lobby (user_id, username, status)
+      VALUES ($1, $2, 'Idle')
+      ON CONFLICT (user_id) DO UPDATE SET username = $2;
     `;
-
+  
     const valuesUpdatePoints = [user.id, username];
     const resultUpdatePoints = await client.query(queryUpdatePoints, valuesUpdatePoints);
     client.release()
@@ -586,6 +599,7 @@ app.post('/api/login', [
   catch (error) {
     console.error(error);
   }
+  
 
   // Return the token and user ID to the frontend
   res.json({ token, userId: user.id });
