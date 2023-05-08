@@ -20,6 +20,9 @@ const readyClients = new Array
 const wsServer = new WebSocketServer({ server });
 
 wsServer.on('connection', function connection(ws, req) {
+
+  let currentStatus = { value: '' }
+
   console.log(`Client list before connection:`)
     clients.forEach(element => {
       console.log(element.userId)
@@ -48,11 +51,17 @@ wsServer.on('connection', function connection(ws, req) {
   // Handle messages from the client
   ws.on('message', function incoming(message) {
     console.log('received: %s', message);
-  });
 
-  // Handle messages from the client
-  ws.on('message', function incoming(message) {
-    console.log('User', ws.userId, 'logged in');
+    const data = JSON.parse(message)
+
+    clients.forEach((client) => {
+      // client.send(JSON.stringify(currentStatus))
+
+      // Send a console message back to the client
+      const user_status_update = data
+
+      client.send(JSON.stringify({ user_status_update }))
+    })
   });
 
   // Handle the WebSocket connection being closed
@@ -74,7 +83,7 @@ server.listen(port, () => {
 
 const pool = new Pool({
     user: 'postgres',
-    host: '10.0.0.193',
+    host: '10.0.0.197',
     database: 'trivia',
     password: dbpass,
     port: 5432, // the default PostgreSQL port
