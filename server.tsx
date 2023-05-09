@@ -152,7 +152,6 @@ app.get('/api/games', async (req, res) => {
 
 app.get('/api/games/id', async (req, res) => {
   const { player1, player2 } = req.query;
-
   try {
     // execute the query and get the result
     const result = await pool.query(
@@ -166,7 +165,32 @@ app.get('/api/games/id', async (req, res) => {
       // Return the id to the front-end
       console.log(`id: ${result.rows[0].id}`)
 
-      res.status(200).json({ id: result.rows[0].id });
+      res.status(200).json({ id: result.rows[0].id, game_status: result.rows[0].game_status });
+    } else {
+      // Return an error response
+      res.status(404).json({ error: 'Game not found' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+})
+
+app.get('/api/games/status', async (req, res) => {
+  const { player1, player2 } = req.query;
+  try {
+    // execute the query and get the result
+    const result = await pool.query(
+      'SELECT game_status FROM games WHERE (player1_id = $1 OR player2_id = $1) AND (player1_id = $2 OR player2_id = $2)',
+      [player1, player2]
+    );
+    console.log(`player1: ${player1} player2: ${player2}`)
+
+    if (result.rows.length > 0) {
+      // Return the id to the front-end
+      console.log(`game_status: ${result.rows[0].game_status}`)
+
+      res.status(200).json({ game_status: result.rows[0].game_status });
     } else {
       // Return an error response
       res.status(404).json({ error: 'Game not found' });
