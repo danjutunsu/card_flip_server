@@ -12,12 +12,8 @@ const { WebSocketServer } = require('ws')
 app.use(cors()); // Allow cross-origin requests
 
 const server = require('http').createServer(app);
-
-const clients = new Array
-
-const readyClients = new Array
-
 const wsServer = new WebSocketServer({ server });
+const clients = new Array
 
 wsServer.on('connection', function connection(ws, req) {
   let currentStatus = { value: '' }
@@ -46,26 +42,23 @@ wsServer.on('connection', function connection(ws, req) {
 
   console.log(`User ${userId} connected to the WebSocket server.`);
   
-  if (!readyClients.includes(ws.userId)) {
-    readyClients.push(ws.userId)
-  }
-
   console.log(`Client list after connection:`)
     clients.forEach(element => {
-      console.log(element.userId)
+      console.log(`${element.userId} at place ${clients.indexOf(element)}`)
   });
 
-  console.log(`Ready Clients: ${readyClients}`)
-  readyClients.forEach(element => {
-    console.log(element);
-  })
-
-  // Handle messages from the client
   // Handle messages from the client
 ws.on('message', function incoming(message) {
   console.log('received: %s', message);
 
   const data = JSON.parse(message)
+
+  if (data.payload === 'logout') {
+    console.log('removing player')
+    const index = clients.indexOf(ws);
+
+    clients.splice(index, 1)
+  }
 
   clients.forEach((client) => {
     const user_status_update = data.payload;
@@ -74,17 +67,19 @@ ws.on('message', function incoming(message) {
   })
 });
 
-
   // Handle the WebSocket connection being closed
-  ws.on('close', function close() {
-    console.log('WebSocket connection closed');
-    console.log(`Client list after close:`)
-    clients.forEach(element => {
-      console.log(element.userId)
-    });
-    console.log('splicing ' + clients.indexOf(ws))
-    // Remove the client's socket object from the clients array
-    clients.splice(clients.indexOf(ws));
+ws.on('close', function close() {
+  console.log('WebSocket connection closed');
+  console.log(`Client list after close:`)
+  clients.forEach(element => {
+    console.log(`${element.userId} at place ${clients.indexOf(element)}`)
+  });
+  
+  // Remove the client's socket object from the clients array
+  const index = clients.indexOf(ws);
+  if (index > -1) {
+    clients.splice(index, 1);
+  }
   });
 });
 
@@ -246,6 +241,7 @@ app.get('/api/games/turn', async (req, res) => {
 });
 
 app.put('/api/games/turn', async (req, res) => {
+  const { player1, player2 } = req.body
   try {
     const client = await pool.connect();
     const queryUpdateTurn = `
@@ -256,11 +252,11 @@ app.put('/api/games/turn', async (req, res) => {
           WHEN turn_id = player2_id THEN player1_id 
           ELSE turn_id 
       END
-    WHERE id = 25;
+    WHERE (player1_id = $1 OR player2_id = $1) AND (player1_id = $2 OR player2_id = $2);
     `;
-  await client.query(queryUpdateTurn);
+    const values = [player1, player2]
+  await client.query(queryUpdateTurn, values);
     client.release();
-    console.log('worked')
     res.json({ success: true }); 
   } catch (error) {
     console.error(error);
@@ -268,23 +264,23 @@ app.put('/api/games/turn', async (req, res) => {
   }
 });
 
-app.put('/api/games', async (req, res) => {
-  const { userId, questionId, answer, answered, count } = req.body;
-  try {
-    const client = await pool.connect();
-    const queryUpdateGames = `
-    UPDATE games SET turn_id = $4 WHERE player1_id = $1 OR player2_id = $1
-    ${answered === count ? `AND (player1_id IS NOT NULL AND player2_id IS NOT NULL)` : ''}
-  `;
-  const valuesInsertAnswer = [userId, questionId, answer, userId, '7'];
-  await client.query(queryUpdateGames, valuesInsertAnswer);
-    client.release();
-    res.json({ success: true }); 
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('An error occurred while saving the answer');
-  }
-});
+// app.put('/api/games', async (req, res) => {
+//   const { userId, questionId, answer, answered, count } = req.body;
+//   try {
+//     const client = await pool.connect();
+//     const queryUpdateGames = `
+//     UPDATE games SET turn_id = $4 WHERE player1_id = $1 OR player2_id = $1
+//     ${answered === count ? `AND (player1_id IS NOT NULL AND player2_id IS NOT NULL)` : ''}
+//   `;
+//   const valuesInsertAnswer = [userId, questionId, answer, userId, '7'];
+//   await client.query(queryUpdateGames, valuesInsertAnswer);
+//     client.release();
+//     res.json({ success: true }); 
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send('An error occurred while saving the answer');
+//   }
+// });
 
 app.get('/api/lobby', async (req, res) => {
   try {
