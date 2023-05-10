@@ -201,6 +201,30 @@ app.get('/api/games/status', async (req, res) => {
   }
 })
 
+app.put('/api/games/status', async (req, res) => {
+  const { player1, player2 } = req.body;
+  try {
+    const client = await pool.connect();
+    const queryUpdateStatus = `
+    UPDATE games
+    SET game_status = CASE
+    WHEN game_status < 3 THEN game_status + 1
+    WHEN game_status = 3 THEN 0
+    END
+    WHERE (player1_id = $1 OR player2_id = $1) AND (player1_id = $2 OR player2_id = $2);
+    `;
+    const values = [player1, player2];
+    await client.query(queryUpdateStatus, values);
+    client.release();
+    console.log(`Player1: ${player1} Player2: ${player2}`)
+
+    res.json({ success: true }); 
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred while updating the game status');
+  }
+});
+
 app.get('/api/games/turn', async (req, res) => {
   const { gameId } = req.query;
   console.log(`GameId: ${gameId}`)
