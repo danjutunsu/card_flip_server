@@ -366,6 +366,18 @@ app.get('/api/questions', async (req, res) => {
   }
 });
 
+app.get('/api/answers', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM answers');
+    const answers = result.rows;
+    data = answers;
+    res.json(answers);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('An error occurred while retrieving the answers');
+  }
+});
+
 app.post('/api/reset', async (req, res) => {
   const { userId } = req.body;
 
@@ -514,13 +526,13 @@ app.get('/api/guesses', async (req, res) => {
 });
 
 app.put('/api/points', async (req, res) => {
-  const { userName } = req.body;
-  if (!userName) {
-    return res.status(400).json({ error: 'userName required' });
+  const { userName, points, total } = req.body;
+  if (!userName || !points || !total) {
+    return res.status(400).json({ error: 'userName, points, and total required' });
   }
   try {
     const query = 'INSERT INTO points (username, correct, total) VALUES ($1, $2, $3) RETURNING *';
-    const values = [userName, 0, 0];
+    const values = [userName, points, total];
     const result = await pool.query(query, values);
     const savedPoints = result.rows[0];
     res.json(savedPoints);
