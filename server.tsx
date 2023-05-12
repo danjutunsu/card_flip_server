@@ -274,24 +274,6 @@ app.put('/api/games/turn', async (req, res) => {
   }
 });
 
-// app.put('/api/games', async (req, res) => {
-//   const { userId, questionId, answer, answered, count } = req.body;
-//   try {
-//     const client = await pool.connect();
-//     const queryUpdateGames = `
-//     UPDATE games SET turn_id = $4 WHERE player1_id = $1 OR player2_id = $1
-//     ${answered === count ? `AND (player1_id IS NOT NULL AND player2_id IS NOT NULL)` : ''}
-//   `;
-//   const valuesInsertAnswer = [userId, questionId, answer, userId, '7'];
-//   await client.query(queryUpdateGames, valuesInsertAnswer);
-//     client.release();
-//     res.json({ success: true }); 
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).send('An error occurred while saving the answer');
-//   }
-// });
-
 app.get('/api/lobby', async (req, res) => {
   try {
     const client = await pool.connect();
@@ -365,8 +347,9 @@ app.delete('/api/lobby', async (req, res) => {
 });
 
 app.get('/api/questions', async (req, res) => {
+  const { genre } = req.query
   try {
-    const result = await pool.query('SELECT * FROM questions');
+    const result = await pool.query(`SELECT * FROM ${genre}`);
     const questions = result.rows;
     data = questions;
     res.json(questions);
