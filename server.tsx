@@ -53,18 +53,28 @@ ws.on('message', function incoming(message) {
 
   const data = JSON.parse(message)
 
+  // Send all clients a message to navigate to the stats page to force navigation at game's end
+  if (data.payload === 'end') {
+    clients.forEach((client) => {
+      const end_game = data.payload;
+  
+      client.send(JSON.stringify({ end_game }))
+    })
+  }
+
   if (data.payload === 'logout') {
-    console.log('removing player')
     const index = clients.indexOf(ws);
 
     clients.splice(index, 1)
   }
 
-  clients.forEach((client) => {
-    const user_status_update = data.payload;
+  if (data.type === 'user_status_update') {
+    clients.forEach((client) => {
+      const user_status_update = data.payload;
 
-    client.send(JSON.stringify({ user_status_update }))
-  })
+      client.send(JSON.stringify({ user_status_update }))
+    })
+  }
 });
 
   // Handle the WebSocket connection being closed
@@ -526,14 +536,23 @@ app.get('/api/guesses', async (req, res) => {
 });
 
 app.put('/api/points', async (req, res) => {
-  const { userName, points, total } = req.body;
-  if (!userName || !points || !total) {
-    return res.status(400).json({ error: 'userName, points, and total required' });
+  const { userId, points, total } = req.body;
+  if (!userId || !points || !total) {
+    return res.status(400).json({ error: 'userId, points, and total required' });
   }
   try {
-    const query = 'INSERT INTO points (username, correct, total) VALUES ($1, $2, $3) RETURNING *';
-    const values = [userName, points, total];
-    const result = await pool.query(query, values);
+    const queryUpdatePoints = `
+        UPDATE points
+        SET
+          points = points + $2,
+          total_guess = total_guess + $3,
+          total_correct = total_correct + $2,
+          correct_round = correct_round + 1,
+          total_round = total_round + 1
+        WHERE user_id = $1;
+      `;
+    const valuesUpdatePoints = [userId, points, total];
+    const result = await pool.query(queryUpdatePoints, valuesUpdatePoints);
     const savedPoints = result.rows[0];
     res.json(savedPoints);
   } catch (error) {
