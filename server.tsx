@@ -75,6 +75,14 @@ ws.on('message', function incoming(message) {
       client.send(JSON.stringify({ user_status_update }))
     })
   }
+
+  if (data.payload.message === 'set genre') {
+    const genreToSet = data.payload.genre;
+
+    clients.forEach((client) => {
+      client.send(JSON.stringify({ genreToSet }))
+    })
+  }
 });
 
   // Handle the WebSocket connection being closed
@@ -353,6 +361,18 @@ app.get('/api/questions', async (req, res) => {
     const questions = result.rows;
     data = questions;
     res.json(questions);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(`An error occurred while retrieving the questions from ${genre}`);
+  }
+});
+
+app.get('/api/questions/genres', async (req, res) => {
+  try {
+    const result = await pool.query(`SELECT * FROM questions`);
+    const questions = result.rows;
+    data = questions;
+    res.json(data);
   } catch (err) {
     console.error(err);
     res.status(500).send('An error occurred while retrieving the questions');
