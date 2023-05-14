@@ -178,7 +178,33 @@ app.get('/api/games/id', async (req, res) => {
       // Return the id to the front-end
       console.log(`id: ${result.rows[0].id}`)
 
-      res.status(200).json({ id: result.rows[0].id, game_status: result.rows[0].game_status });
+      res.status(200).json({ player1_id: result.rows[0].player1_id, id: result.rows[0].id, game_status: result.rows[0].game_status });
+    } else {
+      // Return an error response
+      res.status(404).json({ error: 'Game not found' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+})
+
+app.get('/api/games/player1', async (req, res) => {
+  const { player1, player2 } = req.query;
+  try {
+    // execute the query and get the result
+    const result = await pool.query(
+      'SELECT player1_id FROM games WHERE (player1_id = $1 OR player2_id = $1) AND (player1_id = $2 OR player2_id = $2)',
+      [player1, player2]
+    );
+    console.log(`player1: ${player1} player2: ${player2}`)
+
+    if (result.rows.length > 0) {
+
+      // Return the id to the front-end
+      console.log(`id: ${result.rows[0].id}`)
+
+      res.status(200).json(result.rows[0].player1_id);
     } else {
       // Return an error response
       res.status(404).json({ error: 'Game not found' });
@@ -258,6 +284,24 @@ app.get('/api/games/turn', async (req, res) => {
   }
 });
 
+app.get('/api/games/genre', async (req, res) => {
+  const { player1, player2 } = req.query;
+  try {
+    const getGameGenre = `
+      SELECT game_genre 
+      FROM games
+      WHERE (player1_id = $1 OR player2_id = $1) AND (player1_id = $2 OR player2_id = $2);
+    `;
+    const values = [player1, player2];
+    const result = await pool.query(getGameGenre, values);
+    res.json(result.rows[0]?.game_genre);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
 app.put('/api/games/turn', async (req, res) => {
   const { player1, player2 } = req.body
   try {
@@ -279,6 +323,25 @@ app.put('/api/games/turn', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send('An error occurred while saving the answer');
+  }
+});
+
+app.put('/api/games/genre', async (req, res) => {
+  const { player1, player2, genre } = req.body
+  try {
+    const client = await pool.connect();
+    const queryUpdateGenre = `
+    UPDATE games
+    SET game_genre = $3
+    WHERE (player1_id = $1 OR player2_id = $1) AND (player1_id = $2 OR player2_id = $2);
+    `;
+    const values = [player1, player2, genre]
+  await client.query(queryUpdateGenre, values);
+    client.release();
+    res.json({ success: true }); 
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred while saving the genre');
   }
 });
 
