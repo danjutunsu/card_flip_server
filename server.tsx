@@ -57,6 +57,7 @@ ws.on('message', function incoming(message) {
   if (data.payload === 'end') {
     clients.forEach((client) => {
       const end_game = data.payload;
+      console.log(`Sending end_game message`)
   
       client.send(JSON.stringify({ end_game }))
     })
@@ -613,8 +614,10 @@ app.put('/api/points', async (req, res) => {
           points = points + $2,
           total_guess = total_guess + $3,
           total_correct = total_correct + $2,
-          correct_round = correct_round + 1,
-          total_round = total_round + 1
+          total_incorrect = total_incorrect + ($3 - $2),
+          correct_round = $2,
+          incorrect_round = $3 - $2,
+          total_round = $3
         WHERE user_id = $1;
       `;
     const valuesUpdatePoints = [userId, points, total];
