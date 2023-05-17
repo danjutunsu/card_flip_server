@@ -63,6 +63,15 @@ ws.on('message', function incoming(message) {
     })
   }
 
+  if (data.payload === 'reset') {
+
+    clients.forEach((client) => {
+      const reset = data.payload;
+      
+      client.send(JSON.stringify({ reset }))
+    })
+  }
+
   if (data.payload === 'logout') {
     const index = clients.indexOf(ws);
 
@@ -455,28 +464,28 @@ app.get('/api/answers', async (req, res) => {
   }
 });
 
-app.post('/api/reset', async (req, res) => {
-  const { userId } = req.body;
-
+app.put('/api/reset', async (req, res) => {
+  const { userId, userId2 } = req.body;
+  console.log("CALLED RESET")
   try {
-    const client = await pool.connect();
     const queryUpdatePoints = `
       UPDATE points
       SET
         correct_round = 0,
         incorrect_round = 0,
         total_round = 0
-      WHERE user_id = $1;
+      WHERE user_id = $1 OR user_id = $2;
     `;
-    const valuesUpdatePoints = [userId];
-    const resultUpdatePoints = await client.query(queryUpdatePoints, valuesUpdatePoints);
-    client.release();
+    const valuesUpdatePoints = [userId, userId2];
+    await pool.query(queryUpdatePoints, valuesUpdatePoints);
+    console.log('Reset the rounds');
     res.json({ success: true });
   } catch (error) {
     console.error(error);
-    res.status(500).send('An error occurred while saving the guess');
+    res.status(500).send('An error occurred while resetting the rounds');
   }
 });
+
 
 app.post('/api/guesses', async (req, res) => {
   const { userId, questionId, userGuess } = req.body;
