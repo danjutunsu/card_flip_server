@@ -75,7 +75,14 @@ ws.on('message', function incoming(message) {
   if (data.payload === 'logout') {
     const index = clients.indexOf(ws);
 
+    clients.forEach((client) => {
+      const logout = data.payload;
+
+      client.send(JSON.stringify({ logout }))
+    })
+
     clients.splice(index, 1)
+
   }
 
   if (data.type === 'user_status_update') {
@@ -86,11 +93,34 @@ ws.on('message', function incoming(message) {
     })
   }
 
+  if (data.type === 'invite') {
+    clients.forEach((client) => {
+      console.log(`${client.userId}`)
+      if (client.userId === data.payload.recipient.toString()) {
+        const invite = data.payload;
+
+        console.log(`sender ${client.userId}`)
+        console.log(`recipient ${data.payload.recipient}`)
+
+        client.send(JSON.stringify({ invite }))
+      }
+    })
+  }
+
   if (data.payload.message === 'set genre') {
     const genreToSet = data.payload.genre;
 
     clients.forEach((client) => {
       client.send(JSON.stringify({ genreToSet }))
+    })
+  }
+  
+  if (data.type === 'connected') {
+    console.log(`connectad`)
+    const connected = data.payload;
+
+    clients.forEach((client) => {
+      client.send(JSON.stringify({ connected }))
     })
   }
 });
@@ -575,8 +605,6 @@ app.get('/api/points', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM points WHERE user_id = $1', [userId]);
     
-    // console.log("USER " + userId)
-    // console.log(rows)
     res.json(rows)
   } catch (error) {
     console.error(error);
