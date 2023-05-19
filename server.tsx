@@ -114,6 +114,19 @@ ws.on('message', function incoming(message) {
     })
   }
 
+  if (data.type === 'invitee') {
+    clients.forEach((client) => {
+      console.log(`CLIENT ID: ${client.userId}`)
+      if (client.userId === data.payload.userId.toString()) {
+        const invitee = data.payload;
+
+        console.log(`INVITING ${data.payload.userId}`)
+
+        client.send(JSON.stringify({ invitee }))
+      }
+    })
+  }
+
   if (data.payload.message === 'set genre') {
     const genreToSet = data.payload.genre;
 
@@ -784,6 +797,19 @@ app.get('/api/user', async (req, res) => {
     res.status(500).send('An error occurred while retrieving the user');
   }
 });
+
+app.get('/api/users/invite', async (req, res) => {
+  try {
+    const { username } = req.query;
+    const result = await pool.query('SELECT * FROM users WHERE "username" ILIKE $1', [username]);
+    const user = result.rows[0];
+    res.json(user.id);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('An error occurred while retrieving the user');
+  }
+});
+
 
 // define an endpoint to submit guesses from the second player
 app.post('/api/correct', (req, res) => {
