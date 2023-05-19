@@ -82,7 +82,14 @@ ws.on('message', function incoming(message) {
     })
 
     clients.splice(index, 1)
+  }
 
+  if (data.payload === 'leave') {
+    clients.forEach((client) => {
+      const leave = data.payload;
+
+      client.send(JSON.stringify({ leave }))
+    })
   }
 
   if (data.type === 'user_status_update') {
@@ -386,12 +393,15 @@ app.put('/api/games/genre', async (req, res) => {
 });
 
 app.get('/api/lobby', async (req, res) => {
+  const { uuid } = req.query;
+  console.log(`UUID: ${uuid}`)
   try {
     const client = await pool.connect();
     const queryGetUsers = `
-      SELECT user_id, username, status FROM lobby;
+      SELECT user_id, username, status FROM lobby WHERE lobby_id = $1;
     `;
-    const resultGetUsers = await client.query(queryGetUsers);
+    const values = [uuid]
+    const resultGetUsers = await client.query(queryGetUsers, values);
     client.release();
     const users = resultGetUsers.rows;
     const allUsersReady = users.every(user => user.status === 'Ready');
@@ -431,6 +441,61 @@ app.put('/api/lobby', async (req, res) => {
     UPDATE lobby SET status = CASE WHEN status = 'Idle' THEN 'Ready' ELSE 'Idle' END WHERE user_id = $1 RETURNING *;
     `;
     const valueUpdateUser = [userId];
+    const result = await client.query(updatedUser, valueUpdateUser);
+    client.release();
+    res.status(200).json(result.rows[0]); // Return updated user object with new status
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
+
+app.put('/api/lobby/leave', async (req, res) => {
+  const { userId, uuid } = req.body;
+  console.log('TRIGGERED');
+  try {
+    const client = await pool.connect();
+    const updatedUser = `
+      UPDATE lobby SET lobby_id = $3 WHERE user_id = $1 and lobby_id = $2;
+    `;
+    const valueUpdateUser = [userId, uuid, null];
+    const result = await client.query(updatedUser, valueUpdateUser);
+    client.release();
+    res.status(200).json(result.rows[0]); // Return updated user object with new status
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
+
+
+app.put('/api/lobby/uuid', async (req, res) => {
+  const { id, uuid } = req.body;
+  console.log(`uuid: ${uuid}`)
+  try {
+    const client = await pool.connect();
+    const updatedUser = `
+    UPDATE lobby SET lobby_id = $2 WHERE user_id = $1;
+    `;
+    const valueUpdateUser = [id, uuid];
+    const result = await client.query(updatedUser, valueUpdateUser);
+    client.release();
+    res.status(200).json(result.rows[0]); // Return updated user object with new status
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
+
+app.put('/api/lobby/:lobbyId', async (req, res) => {
+  const { lobbyId } = req.params;
+  const { userId } = req.body;
+  try {
+    const client = await pool.connect();
+    const updatedUser = `
+      UPDATE lobby SET lobby_id = $1 WHERE user_id = $2;
+    `;
+    const valueUpdateUser = [lobbyId, userId];
     const result = await client.query(updatedUser, valueUpdateUser);
     client.release();
     res.status(200).json(result.rows[0]); // Return updated user object with new status
