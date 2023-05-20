@@ -127,6 +127,34 @@ ws.on('message', function incoming(message) {
     })
   }
 
+  if (data.type === 'user_rejected') {
+    console.log(`REJECTED: ${data.payload.reject}`)
+    console.log(`REQUESTED ${data.payload.request}`)
+    clients.forEach((client) => {
+      console.log(`CLIENT ID: ${client.userId}`)
+      if (client.userId === data.payload.request.toString()) {
+        const user_rejected = data.payload;
+
+        console.log(`${data.payload.reject} rejected`)
+
+        client.send(JSON.stringify({ user_rejected }))
+      }
+    })
+  }
+
+  if (data.type === 'refresh') {
+    clients.forEach((client) => {
+      console.log(`CLIENT ID: ${client.userId}`)
+      if (client.userId === data.payload.user1.toString() || client.userId === data.payload.user2.toString()) {
+        const refresh = data.payload;
+
+        console.log(`refreshing`)
+
+        client.send(JSON.stringify({ refresh }))
+      }
+    })
+  }
+
   if (data.payload.message === 'set genre') {
     const genreToSet = data.payload.genre;
 
@@ -764,24 +792,19 @@ app.get('/api/stats', async (req, res) => {
 });
 
 app.post('/api/users', async (req, res) => {
-  const { userId, userName, password } = req.body;
-  try {
-    // Check if the user already exists
-    const existingUser = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
-    if (existingUser.rows.length > 0) {
-      // Update the existing user
-      const updatedUser = await pool.query('UPDATE users SET userName = $1 WHERE id = $2 RETURNING *', [userName, userId]);
-      res.json(updatedUser.rows[0]);
-    } else {
-      // Create a new user
-      console.log("CREATING")
-      const savedUser = await pool.query('INSERT INTO users (id, userName, email, password) VALUES ($1, $2, $3, $4) RETURNING *', [userId, userName, "sample@sample.com", password]);
+  const { userName, email, password } = req.body;
+  if (userName && email && password) {
+    try {
+      const savedUser = await pool.query('INSERT INTO users (userName, email, password) VALUES ($1, $2, $3) RETURNING *', [userName, email, password]);
       console.log("CREATED")
       res.json(savedUser.rows[0]);
     }
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('An error occurred while saving the user');
+    catch (error) {
+      console.error(error);
+      res.status(500).send('An error occurred while saving the user');
+    }
+  } else {
+    res.status(500).send('All forms must be completed');
   }
 });
 
