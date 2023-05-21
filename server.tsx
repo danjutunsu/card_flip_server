@@ -266,10 +266,30 @@ app.get('/api/games/id', async (req, res) => {
       // Return the id to the front-end
       console.log(`id: ${result.rows[0].id}`)
 
-      res.status(200).json({ player1_id: result.rows[0].player1_id, id: result.rows[0].id, game_status: result.rows[0].game_status });
+      res.status(200).json({ player1_id: result.rows[0].player1_id, id: result.rows[0].id, game_status: result.rows[0].game_status, game_genre: result.rows[0].game_genre });
     } else {
-      // Return an error response
-      res.status(404).json({ error: 'Game not found' });
+      try {
+        const gameInsert =
+        `INSERT INTO games (player1_id, player2_id, game_status, turn_id)
+        VALUES ($1, $2, 0, $1)`
+        const valuesInsertPoints = [player1, player2]
+        const result = await pool.query(gameInsert, valuesInsertPoints);
+        console.log(`player1: ${player1} player2: ${player2}`)
+    
+        if (result.rows.length > 0) {
+    
+          // Return the id to the front-end
+          console.log(`id: ${result.rows[0].id}`)
+    
+          res.status(200).json({ player1_id: result.rows[0].player1_id, player2_id: result.rows[0].player2_id, id: result.rows[0].id, game_status: result.rows[0].game_status });
+        } else {
+          // Return an error response
+          res.status(500).json({ error: 'Error inserting game' });
+        }
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+      }
     }
   } catch (error) {
     console.error(error);
@@ -277,14 +297,14 @@ app.get('/api/games/id', async (req, res) => {
   }
 })
 
-app.get('/api/games/player1', async (req, res) => {
+app.post('/api/games', async (req, res) => {
   const { player1, player2 } = req.query;
   try {
-    // execute the query and get the result
-    const result = await pool.query(
-      'SELECT player1_id FROM games WHERE (player1_id = $1 OR player2_id = $1) AND (player1_id = $2 OR player2_id = $2)',
-      [player1, player2]
-    );
+    const gameInsert =
+    `INSERT INTO games (player1_id, player2_id, game_status, turn_id)
+    VALUES ($1, $2, 0, $1)`
+    const valuesInsertPoints = [player1, player2]
+    const result = await pool.query(gameInsert, valuesInsertPoints);
     console.log(`player1: ${player1} player2: ${player2}`)
 
     if (result.rows.length > 0) {
@@ -292,10 +312,10 @@ app.get('/api/games/player1', async (req, res) => {
       // Return the id to the front-end
       console.log(`id: ${result.rows[0].id}`)
 
-      res.status(200).json(result.rows[0].player1_id);
+      res.status(200).json({ player1_id: result.rows[0].player1_id, player2_id: result.rows[0].player2_id, id: result.rows[0].id, game_status: result.rows[0].game_status });
     } else {
       // Return an error response
-      res.status(404).json({ error: 'Game not found' });
+      res.status(500).json({ error: 'Error inserting game' });
     }
   } catch (error) {
     console.error(error);
@@ -388,7 +408,6 @@ app.get('/api/games/genre', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
 
 app.put('/api/games/turn', async (req, res) => {
   const { player1, player2 } = req.body
@@ -622,60 +641,62 @@ app.put('/api/reset', async (req, res) => {
   }
 });
 
-
 app.post('/api/guesses', async (req, res) => {
   const { userId, questionId, userGuess } = req.body;
 
   try {
     const client = await pool.connect();
-    const { rows } = await client.query(
-            'SELECT answer FROM questions WHERE id = $1',
-            [questionId]
-          );
-    const answer = rows[0].answer;
-    const queryUserPoints = `
-      SELECT * FROM points
-      WHERE user_id = $1;
+    const queryInsertGuess = `
+    INSERT INTO guesses (user_id, question_id, guess)
+    VALUES ($1, $2, $3)
+    ON CONFLICT (user_id, question_id)
+    DO UPDATE SET guess = $3;
     `;
-    const valuesUserPoints = [userId];
-    const resultUserPoints = await client.query(queryUserPoints, valuesUserPoints);
+    const valuesInsertGuess = [userId, questionId, userGuess];
+    await client.query(queryInsertGuess, valuesInsertGuess);
+    // const queryUserPoints = `
+    //   SELECT * FROM points
+    //   WHERE user_id = $1;
+    // `;
+    // const valuesUserPoints = [userId];
+    // const resultUserPoints = await client.query(queryUserPoints, valuesUserPoints);
 
-    if (resultUserPoints.rows.length === 0) {
-      const queryInsertPoints = `
-        INSERT INTO points (user_id, points, total_guess, total_correct, total_incorrect, correct_round, incorrect_round)
-        VALUES ($1, 1, 1, 1, 0, 1, 0);
-      `;
-      const valuesInsertPoints = [userId];
-      await client.query(queryInsertPoints, valuesInsertPoints);
-    } else {
-      const queryUpdatePoints = `
-        UPDATE points
-        SET
-          points = points + 1,
-          total_guess = total_guess + 1,
-          total_correct = total_correct + 1,
-          correct_round = correct_round + 1,
-          total_round = total_round + 1
-        WHERE user_id = $1
-          AND $2 = $3;
-      `;
-      const valuesUpdatePoints = [userId, Number(userGuess), answer];
-      const resultUpdatePoints = await client.query(queryUpdatePoints, valuesUpdatePoints);
+    // if (resultUserPoints.rows.length === 0) {
+    //   const queryInsertPoints = `
+    //     INSERT INTO points (user_id, points, total_guess, total_correct, total_incorrect, correct_round, incorrect_round)
+    //     VALUES ($1, 1, 1, 1, 0, 1, 0);
+    //   `;
+    //   const valuesInsertPoints = [userId];
+    //   await client.query(queryInsertPoints, valuesInsertPoints);
+    // } else {
+    //   const queryUpdatePoints = `
+    //     UPDATE points
+    //     SET
+    //       points = points + 1,
+    //       total_guess = total_guess + 1,
+    //       total_correct = total_correct + 1,
+    //       correct_round = correct_round + 1,
+    //       total_round = total_round + 1
+    //     WHERE user_id = $1
+    //       AND $2 = $3;
+    //   `;
+    //   const valuesUpdatePoints = [userId, Number(userGuess), answer];
+    //   const resultUpdatePoints = await client.query(queryUpdatePoints, valuesUpdatePoints);
 
-      if (resultUpdatePoints.rowCount === 0) {
-        const queryUpdateIncorrect = `
-          UPDATE points
-          SET
-            total_guess = total_guess + 1,
-            total_incorrect = total_incorrect + 1,
-            incorrect_round = incorrect_round + 1,
-            total_round = total_round + 1
-          WHERE user_id = $1;
-        `;
-        const valuesUpdateIncorrect = [userId];
-        await client.query(queryUpdateIncorrect, valuesUpdateIncorrect);
-      }
-    }
+    //   if (resultUpdatePoints.rowCount === 0) {
+    //     const queryUpdateIncorrect = `
+    //       UPDATE points
+    //       SET
+    //         total_guess = total_guess + 1,
+    //         total_incorrect = total_incorrect + 1,
+    //         incorrect_round = incorrect_round + 1,
+    //         total_round = total_round + 1
+    //       WHERE user_id = $1;
+    //     `;
+    //     const valuesUpdateIncorrect = [userId];
+    //     await client.query(queryUpdateIncorrect, valuesUpdateIncorrect);
+    //   }
+    // }
 
     client.release();
     res.json({ success: true });
@@ -731,21 +752,17 @@ app.get('/api/username', async (req, res) => {
 
 app.get('/api/guesses', async (req, res) => {
   try {
-    const { rows } = await pool.query(`SELECT * FROM guesses WHERE username = 'Danwell'`);
-    if (rows.length) {
-      console.log('True');
-      return true;
-    } else {
-      console.log('False');
-      return false;
-    }
-  } catch (error) {
-    console.error(error);
+    const result = await pool.query('SELECT * FROM guesses');
+    const guesses = result.rows;
+    data = guesses;
+    res.json(guesses);
+  } catch (err) {
+    console.error(err);
     res.status(500).send('An error occurred while retrieving the guesses');
   }
 });
 
-app.put('/api/points', async (req, res) => {
+app.put('/api/points', async (req, res) => {      
   const { userId, points, total } = req.body;
   if (!userId || !points || !total) {
     return res.status(400).json({ error: 'userId, points, and total required' });
