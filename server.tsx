@@ -608,16 +608,17 @@ app.get('/api/questions/genres', async (req, res) => {
 });
 
 app.get('/api/answers', async (req, res) => {
+  const { gameId } = req.query;
   try {
-    const result = await pool.query('SELECT * FROM answers');
+    const result = await pool.query('SELECT * FROM answers WHERE game_id = $1', [gameId]);
     const answers = result.rows;
-    data = answers;
     res.json(answers);
   } catch (err) {
     console.error(err);
     res.status(500).send('An error occurred while retrieving the answers');
   }
 });
+
 
 app.put('/api/reset', async (req, res) => {
   const { userId, userId2 } = req.body;
@@ -642,17 +643,17 @@ app.put('/api/reset', async (req, res) => {
 });
 
 app.post('/api/guesses', async (req, res) => {
-  const { userId, questionId, userGuess } = req.body;
+  const { userId, questionId, userGuess, gameId } = req.body;
 
   try {
     const client = await pool.connect();
     const queryInsertGuess = `
-    INSERT INTO guesses (user_id, question_id, guess)
-    VALUES ($1, $2, $3)
+    INSERT INTO guesses (user_id, question_id, guess, game_id)
+    VALUES ($1, $2, $3, $4)
     ON CONFLICT (user_id, question_id)
     DO UPDATE SET guess = $3;
     `;
-    const valuesInsertGuess = [userId, questionId, userGuess];
+    const valuesInsertGuess = [userId, questionId, userGuess, gameId];
     await client.query(queryInsertGuess, valuesInsertGuess);
     // const queryUserPoints = `
     //   SELECT * FROM points
@@ -707,17 +708,17 @@ app.post('/api/guesses', async (req, res) => {
 });
 
 app.post('/api/answers', async (req, res) => {
-  const { userId, questionId, answer, answered, count } = req.body;
+  const { userId, questionId, answer, answered, count, gameId } = req.body;
 
   try {
     const client = await pool.connect();
     const queryInsertAnswer = `
-    INSERT INTO answers (user_id, question_id, answer)
-    VALUES ($1, $2, $3)
+    INSERT INTO answers (user_id, question_id, answer, game_id)
+    VALUES ($1, $2, $3, $4)
     ON CONFLICT (user_id, question_id)
     DO UPDATE SET answer = $3;
     `;
-    const valuesInsertAnswer = [userId, questionId, answer];
+    const valuesInsertAnswer = [userId, questionId, answer, gameId];
     await client.query(queryInsertAnswer, valuesInsertAnswer);
     client.release();
     res.json({ success: true }); 
@@ -751,8 +752,9 @@ app.get('/api/username', async (req, res) => {
 });
 
 app.get('/api/guesses', async (req, res) => {
+  const { gameId } = req.query;
   try {
-    const result = await pool.query('SELECT * FROM guesses');
+    const result = await pool.query('SELECT * FROM guesses WHERE game_id = $1', [gameId]);
     const guesses = result.rows;
     data = guesses;
     res.json(guesses);
