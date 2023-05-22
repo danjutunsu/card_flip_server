@@ -488,7 +488,52 @@ app.put('/api/lobby', async (req, res) => {
   try {
     const client = await pool.connect();
     const updatedUser = `
-    UPDATE lobby SET status = CASE WHEN status = 'Idle' THEN 'Ready' ELSE 'Idle' END WHERE user_id = $1 RETURNING *;
+    UPDATE lobby 
+    SET status = CASE 
+    WHEN status = 'Idle' OR status = 'In Progress'
+    THEN 'Ready' 
+    ELSE 'Idle' 
+    END 
+    WHERE user_id = $1 
+    RETURNING *;
+    `;
+    const valueUpdateUser = [userId];
+    const result = await client.query(updatedUser, valueUpdateUser);
+    client.release();
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
+
+app.put('/api/lobby/inprogress', async (req, res) => {
+  const { userId } = req.query;
+  try {
+    const client = await pool.connect();
+    const updatedUser = `
+    UPDATE lobby 
+    SET status = 'In Progress'
+    WHERE user_id = $1;
+    `;
+    const valueUpdateUser = [userId];
+    const result = await client.query(updatedUser, valueUpdateUser);
+    client.release();
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
+
+app.put('/api/lobby/idle', async (req, res) => {
+  const { userId } = req.query;
+  try {
+    const client = await pool.connect();
+    const updatedUser = `
+    UPDATE lobby 
+    SET status = 'Idle'
+    WHERE user_id = $1;
     `;
     const valueUpdateUser = [userId];
     const result = await client.query(updatedUser, valueUpdateUser);
