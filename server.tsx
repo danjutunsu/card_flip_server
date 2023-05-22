@@ -651,7 +651,7 @@ app.post('/api/guesses', async (req, res) => {
     INSERT INTO guesses (user_id, question_id, guess, game_id)
     VALUES ($1, $2, $3, $4)
     ON CONFLICT (user_id, question_id)
-    DO UPDATE SET guess = $3;
+    DO UPDATE SET guess = $3, game_id = $4;
     `;
     const valuesInsertGuess = [userId, questionId, userGuess, gameId];
     await client.query(queryInsertGuess, valuesInsertGuess);
@@ -716,7 +716,7 @@ app.post('/api/answers', async (req, res) => {
     INSERT INTO answers (user_id, question_id, answer, game_id)
     VALUES ($1, $2, $3, $4)
     ON CONFLICT (user_id, question_id)
-    DO UPDATE SET answer = $3;
+    DO UPDATE SET answer = $3, game_id = $4;
     `;
     const valuesInsertAnswer = [userId, questionId, answer, gameId];
     await client.query(queryInsertAnswer, valuesInsertAnswer);
