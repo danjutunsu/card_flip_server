@@ -74,10 +74,8 @@ ws.on('message', function incoming(message) {
 
   if (data.payload === 'logout') {
     const index = clients.indexOf(ws);
-
     clients.forEach((client) => {
       const logout = data.payload;
-
       client.send(JSON.stringify({ logout }))
     })
 
@@ -134,7 +132,6 @@ ws.on('message', function incoming(message) {
       console.log(`CLIENT ID: ${client.userId}`)
       if (client.userId === data.payload.request.toString()) {
         const user_rejected = data.payload;
-
         console.log(`${data.payload.reject} rejected`)
 
         client.send(JSON.stringify({ user_rejected }))
@@ -147,7 +144,6 @@ ws.on('message', function incoming(message) {
       console.log(`CLIENT ID: ${client.userId}`)
       if (client.userId === data.payload.user1.toString() || client.userId === data.payload.user2.toString()) {
         const refresh = data.payload;
-
         console.log(`refreshing`)
 
         client.send(JSON.stringify({ refresh }))
@@ -262,7 +258,6 @@ app.get('/api/games/id', async (req, res) => {
     console.log(`player1: ${player1} player2: ${player2}`)
 
     if (result.rows.length > 0) {
-
       // Return the id to the front-end
       console.log(`id: ${result.rows[0].id}`)
 
@@ -276,8 +271,7 @@ app.get('/api/games/id', async (req, res) => {
         const result = await pool.query(gameInsert, valuesInsertPoints);
         console.log(`player1: ${player1} player2: ${player2}`)
     
-        if (result.rows.length > 0) {
-    
+        if (result.rows.length > 0) {    
           // Return the id to the front-end
           console.log(`id: ${result.rows[0].id}`)
     
@@ -308,7 +302,6 @@ app.post('/api/games', async (req, res) => {
     console.log(`player1: ${player1} player2: ${player2}`)
 
     if (result.rows.length > 0) {
-
       // Return the id to the front-end
       console.log(`id: ${result.rows[0].id}`)
 
@@ -339,7 +332,6 @@ app.get('/api/games/status', async (req, res) => {
 
       res.status(200).json({ game_status: result.rows[0].game_status });
     } else {
-      // Return an error response
       res.status(404).json({ error: 'Game not found' });
     }
   } catch (error) {
@@ -472,8 +464,6 @@ app.get('/api/lobby', async (req, res) => {
   }
 });
 
-
-
 app.post('/api/lobby', async (req, res) => {
   const { userId } = req.body;
   try {
@@ -503,7 +493,7 @@ app.put('/api/lobby', async (req, res) => {
     const valueUpdateUser = [userId];
     const result = await client.query(updatedUser, valueUpdateUser);
     client.release();
-    res.status(200).json(result.rows[0]); // Return updated user object with new status
+    res.status(200).json(result.rows[0]);
   } catch (error) {
     console.error(error);
     res.sendStatus(500);
@@ -521,13 +511,12 @@ app.put('/api/lobby/leave', async (req, res) => {
     const valueUpdateUser = [userId, uuid, null];
     const result = await client.query(updatedUser, valueUpdateUser);
     client.release();
-    res.status(200).json(result.rows[0]); // Return updated user object with new status
+    res.status(200).json(result.rows[0]);
   } catch (error) {
     console.error(error);
     res.sendStatus(500);
   }
 });
-
 
 app.put('/api/lobby/uuid', async (req, res) => {
   const { id, uuid } = req.body;
@@ -540,7 +529,7 @@ app.put('/api/lobby/uuid', async (req, res) => {
     const valueUpdateUser = [id, uuid];
     const result = await client.query(updatedUser, valueUpdateUser);
     client.release();
-    res.status(200).json(result.rows[0]); // Return updated user object with new status
+    res.status(200).json(result.rows[0]);
   } catch (error) {
     console.error(error);
     res.sendStatus(500);
@@ -558,7 +547,7 @@ app.put('/api/lobby/:lobbyId', async (req, res) => {
     const valueUpdateUser = [lobbyId, userId];
     const result = await client.query(updatedUser, valueUpdateUser);
     client.release();
-    res.status(200).json(result.rows[0]); // Return updated user object with new status
+    res.status(200).json(result.rows[0]);
   } catch (error) {
     console.error(error);
     res.sendStatus(500);
@@ -619,7 +608,6 @@ app.get('/api/answers', async (req, res) => {
   }
 });
 
-
 app.put('/api/reset', async (req, res) => {
   const { userId, userId2 } = req.body;
   console.log("CALLED RESET")
@@ -655,50 +643,6 @@ app.post('/api/guesses', async (req, res) => {
     `;
     const valuesInsertGuess = [userId, questionId, userGuess, gameId];
     await client.query(queryInsertGuess, valuesInsertGuess);
-    // const queryUserPoints = `
-    //   SELECT * FROM points
-    //   WHERE user_id = $1;
-    // `;
-    // const valuesUserPoints = [userId];
-    // const resultUserPoints = await client.query(queryUserPoints, valuesUserPoints);
-
-    // if (resultUserPoints.rows.length === 0) {
-    //   const queryInsertPoints = `
-    //     INSERT INTO points (user_id, points, total_guess, total_correct, total_incorrect, correct_round, incorrect_round)
-    //     VALUES ($1, 1, 1, 1, 0, 1, 0);
-    //   `;
-    //   const valuesInsertPoints = [userId];
-    //   await client.query(queryInsertPoints, valuesInsertPoints);
-    // } else {
-    //   const queryUpdatePoints = `
-    //     UPDATE points
-    //     SET
-    //       points = points + 1,
-    //       total_guess = total_guess + 1,
-    //       total_correct = total_correct + 1,
-    //       correct_round = correct_round + 1,
-    //       total_round = total_round + 1
-    //     WHERE user_id = $1
-    //       AND $2 = $3;
-    //   `;
-    //   const valuesUpdatePoints = [userId, Number(userGuess), answer];
-    //   const resultUpdatePoints = await client.query(queryUpdatePoints, valuesUpdatePoints);
-
-    //   if (resultUpdatePoints.rowCount === 0) {
-    //     const queryUpdateIncorrect = `
-    //       UPDATE points
-    //       SET
-    //         total_guess = total_guess + 1,
-    //         total_incorrect = total_incorrect + 1,
-    //         incorrect_round = incorrect_round + 1,
-    //         total_round = total_round + 1
-    //       WHERE user_id = $1;
-    //     `;
-    //     const valuesUpdateIncorrect = [userId];
-    //     await client.query(queryUpdateIncorrect, valuesUpdateIncorrect);
-    //   }
-    // }
-
     client.release();
     res.json({ success: true });
   } catch (error) {
@@ -852,7 +796,6 @@ app.get('/api/users/invite', async (req, res) => {
   }
 });
 
-
 // define an endpoint to submit guesses from the second player
 app.post('/api/correct', (req, res) => {
   // code to process guesses from request body
@@ -912,13 +855,11 @@ app.post('/api/login', [
   }
   catch (error) {
     console.error(error);
-  }
-  
+  }  
 
   // Return the token and user ID to the frontend
   res.json({ token, userId: user.id });
 });
-
 
 async function getUserByUsername(username) {
   const client = await pool.connect();
