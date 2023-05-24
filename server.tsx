@@ -526,13 +526,13 @@ app.put('/api/lobby/inprogress', async (req, res) => {
   }
 });
 
-app.put('/api/lobby/idle', async (req, res) => {
+app.put('/api/lobby/ready', async (req, res) => {
   const { userId } = req.query;
   try {
     const client = await pool.connect();
     const updatedUser = `
     UPDATE lobby 
-    SET status = 'Idle'
+    SET status = 'Ready'
     WHERE user_id = $1;
     `;
     const valueUpdateUser = [userId];
@@ -642,9 +642,10 @@ app.get('/api/questions/genres', async (req, res) => {
 });
 
 app.get('/api/answers', async (req, res) => {
-  const { gameId } = req.query;
+  const { game_id, user_id } = req.query;
+  console.log("FETCHING ANSEWERS for GAME " + game_id)
   try {
-    const result = await pool.query('SELECT * FROM answers WHERE game_id = $1', [gameId]);
+    const result = await pool.query('SELECT * FROM answers WHERE game_id = $1 AND user_id = $2', [game_id, user_id]);
     const answers = result.rows;
     res.json(answers);
   } catch (err) {
@@ -677,7 +678,7 @@ app.put('/api/reset', async (req, res) => {
 
 app.post('/api/guesses', async (req, res) => {
   const { userId, questionId, userGuess, gameId } = req.body;
-
+  console.log("ADDING GUESS")
   try {
     const client = await pool.connect();
     const queryInsertGuess = `
@@ -698,7 +699,7 @@ app.post('/api/guesses', async (req, res) => {
 
 app.post('/api/answers', async (req, res) => {
   const { userId, questionId, answer, answered, count, gameId } = req.body;
-
+  console.log("ADDING ANSWER")
   try {
     const client = await pool.connect();
     const queryInsertAnswer = `
@@ -741,9 +742,9 @@ app.get('/api/username', async (req, res) => {
 });
 
 app.get('/api/guesses', async (req, res) => {
-  const { gameId } = req.query;
+  const { gameId, userId } = req.query;
   try {
-    const result = await pool.query('SELECT * FROM guesses WHERE game_id = $1', [gameId]);
+    const result = await pool.query('SELECT * FROM guesses WHERE game_id = $1 AND user_id = $2', [gameId, userId]);
     const guesses = result.rows;
     data = guesses;
     res.json(guesses);
@@ -753,25 +754,31 @@ app.get('/api/guesses', async (req, res) => {
   }
 });
 
-app.put('/api/points', async (req, res) => {      
-  const { userId, points, total } = req.body;
-  if (!userId || !points || !total) {
-    return res.status(400).json({ error: 'userId, points, and total required' });
+app.put('/api/points', async (req, res) => {
+  const { user_id, points, total, game_id } = req.body;
+  console.log("updating points");
+  console.log(`USER: ${user_id}`)
+  console.log(`POINTS: ${points}`)
+  console.log(`TOTAL: ${total}`)
+  console.log(`GAMEID: ${game_id}`)
+
+  if (!user_id || !points || !total || !game_id) {
+    return res.status(400).json({ error: 'userId, points, total, and gameId required' });
   }
   try {
     const queryUpdatePoints = `
-        UPDATE points
-        SET
-          points = points + $2,
-          total_guess = total_guess + $3,
-          total_correct = total_correct + $2,
-          total_incorrect = total_incorrect + ($3 - $2),
-          correct_round = $2,
-          incorrect_round = $3 - $2,
-          total_round = $3
-        WHERE user_id = $1;
-      `;
-    const valuesUpdatePoints = [userId, points, total];
+      UPDATE points
+      SET
+        points = points + $2,
+        total_guess = total_guess + $3,
+        total_correct = total_correct + $2,
+        total_incorrect = total_incorrect + ($3 - $2),
+        correct_round = $2,
+        incorrect_round = $3 - $2,
+        total_round = $3
+      WHERE user_id = $1;
+    `;
+    const valuesUpdatePoints = [user_id, points, total, game_id];
     const result = await pool.query(queryUpdatePoints, valuesUpdatePoints);
     const savedPoints = result.rows[0];
     res.json(savedPoints);
@@ -780,6 +787,7 @@ app.put('/api/points', async (req, res) => {
     res.status(500).send('An error occurred while saving the points');
   }
 });
+
   
 app.get('/api/stats', async (req, res) => {
   try {
