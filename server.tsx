@@ -755,16 +755,12 @@ app.get('/api/guesses', async (req, res) => {
 });
 
 app.put('/api/points', async (req, res) => {
-  const { user_id, points, total, game_id } = req.body;
+  const { user_id, points, total } = req.body;
   console.log("updating points");
   console.log(`USER: ${user_id}`)
   console.log(`POINTS: ${points}`)
   console.log(`TOTAL: ${total}`)
-  console.log(`GAMEID: ${game_id}`)
 
-  if (!user_id || !points || !total || !game_id) {
-    return res.status(400).json({ error: 'userId, points, total, and gameId required' });
-  }
   try {
     const queryUpdatePoints = `
       UPDATE points
@@ -778,7 +774,7 @@ app.put('/api/points', async (req, res) => {
         total_round = $3
       WHERE user_id = $1;
     `;
-    const valuesUpdatePoints = [user_id, points, total, game_id];
+    const valuesUpdatePoints = [user_id, points, total];
     const result = await pool.query(queryUpdatePoints, valuesUpdatePoints);
     const savedPoints = result.rows[0];
     res.json(savedPoints);
@@ -787,7 +783,6 @@ app.put('/api/points', async (req, res) => {
     res.status(500).send('An error occurred while saving the points');
   }
 });
-
   
 app.get('/api/stats', async (req, res) => {
   try {
@@ -806,6 +801,18 @@ app.get('/api/stats', async (req, res) => {
     res.status(500).send('An error occurred while retrieving the questions');
   }
 });
+
+app.get('/api/games/player1', async (req, res) => {
+  const { game_id } = req.query;
+  try {
+    const result = await pool.query('SELECT player1_id FROM games WHERE id = $1', [game_id]);
+    res.json(result.rows); // Use result.rows instead of result.data
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('An error occurred while retrieving the questions');
+  }
+});
+
 
 app.post('/api/users', async (req, res) => {
   const { userName, email, password } = req.body;
