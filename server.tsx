@@ -9,7 +9,7 @@ const { body, validationResult } = require('express-validator');
 const dbpass = process.env.DB_PASSWORD
 const { WebSocketServer } = require('ws')
 
-app.use(cors()); // Allow cross-origin requests
+// app.use(cors()); // Allow cross-origin requests
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', 'https://frontend-legendary-monstera-8d33f0.netlify.app');
