@@ -15,6 +15,7 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', 'https://frontend-legendary-monstera-8d33f0.netlify.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true'); // Add this line if you need to include credentials in the request
   next();
 });
 
