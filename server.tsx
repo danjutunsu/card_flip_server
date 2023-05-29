@@ -11,6 +11,11 @@ const { WebSocketServer } = require('ws')
 
 app.use(cors()); // Allow cross-origin requests
 
+// define a route for the root path
+app.get('/', (req, res) => {
+  // res.send('Hello, world!');
+});
+
 app.use(function (req, res, next) {
   //Enabling CORS
   res.header("Access-Control-Allow-Origin", "*");
@@ -217,7 +222,6 @@ const pool = new Pool({
 let data;
 
 app.use(express.json())
-app.use(cors())
 
 app.get('/api/games', async (req, res) => {
   try {
@@ -873,10 +877,6 @@ app.post('/api/correct', (req, res) => {
   // res.json(results);
 });
 
-// define a route for the root path
-app.get('/', (req, res) => {
-  // res.send('Hello, world!');
-});
 
 ///-----------------------LOGIN-------------------------\\\
 
