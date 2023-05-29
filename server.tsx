@@ -168,7 +168,6 @@ ws.on('message', function incoming(message) {
   }
   
   if (data.type === 'connected') {
-    console.log(`connectad`)
     const connected = data.payload;
 
     clients.forEach((client) => {
@@ -200,7 +199,7 @@ server.listen(port, () => {
 
 const pool = new Pool({
     user: 'postgres',
-    host: '2620:119:35::35',
+    host: '71.231.200.46',
     database: 'trivia',
     password: dbpass,
     port: 5432, // the default PostgreSQL port
