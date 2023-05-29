@@ -200,7 +200,7 @@ server.listen(port, () => {
 
 const pool = new Pool({
     user: 'postgres',
-    host: '10.0.0.197',
+    host: '71.231.200.46',
     database: 'trivia',
     password: dbpass,
     port: 5432, // the default PostgreSQL port
@@ -956,4 +956,3 @@ async function getUsernameByID(id) {
 }
 
 app.listen(3001, () => console.log('Server started on port 3001'));
-
