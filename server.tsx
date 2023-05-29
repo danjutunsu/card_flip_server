@@ -199,7 +199,7 @@ ws.on('close', function close() {
 });
 
 const port = 3002;
-server.listen(port, () => {
+server.listen(process.env.PORT || port, () => {
   console.log(`WebSocket server listening on port ${port}`);
 });
 
