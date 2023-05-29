@@ -200,7 +200,7 @@ server.listen(port, () => {
 
 const pool = new Pool({
     user: 'postgres',
-    host: '2601:601:1000:bed0:b60e:a6c9:de56:e5e6',
+    host: '71.231.200.46',
     database: 'trivia',
     password: dbpass,
     port: 5432, // the default PostgreSQL port
