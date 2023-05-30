@@ -129,7 +129,7 @@ wss.on('message', function incoming(message) {
   if (data.type === 'invitee') {
     clients.forEach((client) => {
       console.log(`CLIENT ID: ${client.userId}`)
-      if (client.userId === data.payload.userId.toString()) {
+      if (client.userId === data.payload.userId.toString() || client.userId === data.payload.sender.toString()) {
         const invitee = data.payload;
 
         console.log(`INVITING ${data.payload.userId}`)
