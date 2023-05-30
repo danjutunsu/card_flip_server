@@ -25,28 +25,28 @@ app.use(function (req, res, next) {
     next();
   });
 
-const server = require('http').createServer(app);
-const wsServer = new WebSocketServer({ server });
+const server = require('https').createServer(app);
+const wssServer = new WebSocketServer({ server });
 const clients = new Array
 
-wsServer.on('connection', function connection(ws, req) {
+wssServer.on('connection', function connection(wss, req) {
   let currentStatus = { value: '' }
   let hasUserId = false;
 
   const userId = req.url.split('=')[1];
-  ws.userId = userId;
+  wss.userId = userId;
 
   clients.forEach((element) => {
-    if (element.userId === ws.userId) {
+    if (element.userId === wss.userId) {
       hasUserId = true;
     }
   });
   
   if (hasUserId) {
-    console.log(`At least one websocket contains the userId ${ws.userId}`);
+    console.log(`At least one websocket contains the userId ${wss.userId}`);
   } else {
-    console.log(`None of the websockets contain the userId ${ws.userId}`);
-    clients.push(ws);
+    console.log(`None of the websockets contain the userId ${wss.userId}`);
+    clients.push(wss);
   }
 
   console.log(`Client list before connection:`)
@@ -62,7 +62,7 @@ wsServer.on('connection', function connection(ws, req) {
   });
 
   // Handle messages from the client
-ws.on('message', function incoming(message) {
+wss.on('message', function incoming(message) {
   console.log('received: %s', message);
 
   const data = JSON.parse(message)
@@ -87,7 +87,7 @@ ws.on('message', function incoming(message) {
   }
 
   if (data.payload === 'logout') {
-    const index = clients.indexOf(ws);
+    const index = clients.indexOf(wss);
     clients.forEach((client) => {
       const logout = data.payload;
       client.send(JSON.stringify({ logout }))
@@ -183,7 +183,7 @@ ws.on('message', function incoming(message) {
 });
 
   // Handle the WebSocket connection being closed
-ws.on('close', function close() {
+wss.on('close', function close() {
   console.log('WebSocket connection closed');
   console.log(`Client list after close:`)
   clients.forEach(element => {
@@ -191,7 +191,7 @@ ws.on('close', function close() {
   });
   
   // Remove the client's socket object from the clients array
-  const index = clients.indexOf(ws);
+  const index = clients.indexOf(wss);
   if (index > -1) {
     clients.splice(index, 1);
   }
