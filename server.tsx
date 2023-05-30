@@ -223,6 +223,12 @@ let data;
 
 app.use(express.json())
 
+app.get('/api/ip', (req, res) => {
+  const clientIP = req.ip; // Retrieve the client's IP address
+  console.log(`IP: ${clientIP}`)
+  res.send(clientIP);
+});
+
 app.get('/api/games', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM games WHERE player1_id IS NULL or player2_id IS NULL');
@@ -955,6 +961,4 @@ async function getUsernameByID(id) {
   }
 }
 
-app.listen(process.env.PORT || 3001)
-, () => console.log('Server started on port 3001');
-
+app.listen(3001 || process.env.PORT, () => console.log('Server started on port 3001'));
