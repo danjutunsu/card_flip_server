@@ -599,6 +599,24 @@ app.put('/api/lobby/uuid', async (req, res) => {
   }
 });
 
+app.put('/api/lobby/*', async (req, res) => {
+  const { id, uuid } = req.body;
+  console.log(`uuid: ${uuid}`)
+  try {
+    const client = await pool.connect();
+    const updatedUser = `
+    UPDATE lobby SET lobby_id = $2 WHERE user_id = $1;
+    `;
+    const valueUpdateUser = [id, uuid];
+    const result = await client.query(updatedUser, valueUpdateUser);
+    client.release();
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
+
 app.put('/api/lobby/:lobbyId', async (req, res) => {
   const { lobbyId } = req.params;
   const { userId } = req.body;
