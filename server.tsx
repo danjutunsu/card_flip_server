@@ -7,7 +7,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const dbpass = process.env.DB_PASSWORD
-const { WebSocketServer } = require('wss')
+const { WebSocketServer } = require('ws')
 
 app.use(cors()); // Allow cross-origin requests
 
