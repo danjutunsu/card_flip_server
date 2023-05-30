@@ -8,7 +8,6 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const dbpass = process.env.DB_PASSWORD
 const { WebSocketServer } = require('ws')
-const path = require('path');
 
 app.use(cors()); // Allow cross-origin requests
 
@@ -16,12 +15,6 @@ app.use(cors()); // Allow cross-origin requests
 app.get('/', (req, res) => {
   // res.send('Hello, world!');
 });
-
-// Define wildcard route
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
 
 app.use(function (req, res, next) {
   //Enabling CORS
