@@ -300,12 +300,12 @@ app.get('/api/games/id', async (req, res) => {
         }
       } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Error while Inserting into games' });
       }
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Error while getting games ID' });
   }
 })
 
