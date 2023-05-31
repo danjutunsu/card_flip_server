@@ -138,6 +138,7 @@ wss.on('message', function incoming(message) {
       }
     })
   }
+  //
 
   if (data.type === 'user_rejected') {
     console.log(`REJECTED: ${data.payload.reject}`)
