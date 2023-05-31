@@ -87,13 +87,12 @@ wssServer.on('connection', function connection(ws, req) {
   });
 });
 
-const port = process.env.PORT || 3002;
-server.listen(port, () => {
-  console.log(`WebSocket server listening on port ${port}`);
+server.listen(process.env.WS, () => {
+  console.log(`WebSocket server listening on port ${process.env.WS}`);
 });
 
-app.listen(port, () => {
-  console.log('Express server started on port ' + port);
+app.listen(process.env.PORT || 3001, () => {
+  console.log(`Express server started on port ${process.env.WS}`);
 })
 
 const pool = new Pool({
