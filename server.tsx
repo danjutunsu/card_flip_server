@@ -31,7 +31,7 @@ const server = require('https').createServer(app);
 
 app.use(cors())
 // const port = 3002;
-server.listen(process.env.PORT || 3002, () => {
+app.listen(process.env.PORT || 3002, () => {
   console.log(`WebSocket server listening on port ${process.env.PORT}`);
 });
 
