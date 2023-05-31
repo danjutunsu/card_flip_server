@@ -27,7 +27,6 @@ app.use(function (req, res, next) {
     next();
   });
 
-app.use(cors())
 // const port = 3002;
 const server = express()
   .use((req, res) => res.sendFile({ root: __dirname }))
