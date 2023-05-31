@@ -12,35 +12,11 @@ const { WebSocketServer } = require('ws')
 
 app.use(cors()); // Allow cross-origin requests
 
-// define a route for the root path
-app.get('/', (req, res) => {
-  // res.send('Hello, world!');
-});
-
-app.use(function (req, res, next) {
-  //Enabling CORS
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, " +
-  "Accept, x-client-key, x-client-token, x-client-secret, Authorization");
-    next();
-  });
-
-const server = require('https').createServer(app);
-
-
-app.use(cors())
-// const port = 3002;
-app.listen(process.env.PORT || 3002, () => {
-  console.log(`WebSocket server listening on port ${process.env.PORT}`);
-});
-
-
-const wssServer = new WebSocketServer({ server });
+const server = require('http').createServer(app);
+const wsServer = new WebSocketServer({ server });
 const clients = new Array
 
-wssServer.on('connection', function connection(ws, req) {
-  console.log(`WEBSOCKET CONNECTED`)
+wsServer.on('connection', function connection(ws, req) {
   let currentStatus = { value: '' }
   let hasUserId = false;
 
@@ -73,7 +49,7 @@ wssServer.on('connection', function connection(ws, req) {
   });
 
   // Handle messages from the client
-  ws.on('message', function incoming(message) {
+ws.on('message', function incoming(message) {
   console.log('received: %s', message);
 
   const data = JSON.parse(message)
@@ -140,7 +116,7 @@ wssServer.on('connection', function connection(ws, req) {
   if (data.type === 'invitee') {
     clients.forEach((client) => {
       console.log(`CLIENT ID: ${client.userId}`)
-      if (client.userId === data.payload.userId.toString() || client.userId === data.payload.sender.toString()) {
+      if (client.userId === data.payload.userId.toString()) {
         const invitee = data.payload;
 
         console.log(`INVITING ${data.payload.userId}`)
@@ -149,7 +125,6 @@ wssServer.on('connection', function connection(ws, req) {
       }
     })
   }
-  //
 
   if (data.type === 'user_rejected') {
     console.log(`REJECTED: ${data.payload.reject}`)
@@ -186,6 +161,7 @@ wssServer.on('connection', function connection(ws, req) {
   }
   
   if (data.type === 'connected') {
+    console.log(`connectad`)
     const connected = data.payload;
 
     clients.forEach((client) => {
@@ -193,12 +169,9 @@ wssServer.on('connection', function connection(ws, req) {
     })
   }
 });
-  ws.onopen = (e) => {
-    console.log("SOCKET CONNECTED");
-  };
 
   // Handle the WebSocket connection being closed
-  ws.on('close', function close() {
+ws.on('close', function close() {
   console.log('WebSocket connection closed');
   console.log(`Client list after close:`)
   clients.forEach(element => {
@@ -213,10 +186,10 @@ wssServer.on('connection', function connection(ws, req) {
   });
 });
 
-// app.listen(process.env.PORT || 3001, () => {
-//   console.log('Server started on port' + process.env.PORT);
-//   console.log('WebSocketServer started on port' + process.env.WS);
-// });
+const port = 3002;
+server.listen(port, () => {
+  console.log(`WebSocket server listening on port ${port}`);
+});
 
 const pool = new Pool({
     user: 'postgres',
@@ -237,12 +210,7 @@ const pool = new Pool({
 let data;
 
 app.use(express.json())
-
-app.get('/api/ip', (req, res) => {
-  const clientIP = req.ip; // Retrieve the client's IP address
-  console.log(`IP: ${clientIP}`)
-  res.send(clientIP);
-});
+app.use(cors())
 
 app.get('/api/games', async (req, res) => {
   try {
@@ -315,12 +283,12 @@ app.get('/api/games/id', async (req, res) => {
         }
       } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Error while Inserting into games' });
+        res.status(500).json({ error: 'Internal server error' });
       }
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Error while getting games ID' });
+    res.status(500).json({ error: 'Internal server error' });
   }
 })
 
@@ -478,8 +446,6 @@ app.put('/api/games/genre', async (req, res) => {
 });
 
 app.get('/api/lobby', async (req, res) => {
-  console.log(`HERE`)
-
   const { uuid } = req.query;
   console.log(`UUID: ${uuid}`)
   try {
@@ -488,51 +454,6 @@ app.get('/api/lobby', async (req, res) => {
       SELECT user_id, username, status FROM lobby WHERE lobby_id = $1;
     `;
     const values = [uuid]
-    const resultGetUsers = await client.query(queryGetUsers, values);
-    client.release();
-    const users = resultGetUsers.rows;
-    const allUsersReady = users.every(user => user.status === 'Ready');
-    res.json({ users, allUsersReady }); // Return users and flag indicating if all users are ready
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('An error occurred while retrieving the lobby users');
-  }
-});
-
-// app.get('/api/lobby', async (req, res) => {
-//   const { uuid } = req.query;
-//   console.log(`UUID: ${uuid}`);
-
-//   // Perform the necessary logic to retrieve lobby data based on the UUID
-//   // For example, query the database or access other resources
-
-//   try {
-//     const client = await pool.connect();
-//     const queryGetUsers = `
-//       SELECT user_id, username, status FROM lobby WHERE lobby_id = $1;
-//     `;
-//     const values = [uuid]
-//     const resultGetUsers = await client.query(queryGetUsers, values);
-//     client.release();
-//     const users = resultGetUsers.rows;
-//     const allUsersReady = users.every(user => user.status === 'Ready');
-//     res.json({ users, allUsersReady }); // Return users and flag indicating if all users are ready
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).send('An error occurred while retrieving the lobby users');
-//   }
-// });
-
-app.get('/lobby/:lobbyId', async (req, res) => {
-  console.log(`OR HERE`)
-  const lobbyId = req.params.lobbyId;
-  
-  try {
-    const client = await pool.connect();
-    const queryGetUsers = `
-      SELECT user_id, username, status FROM lobby WHERE lobby_id = $1;
-    `;
-    const values = [lobbyId]
     const resultGetUsers = await client.query(queryGetUsers, values);
     client.release();
     const users = resultGetUsers.rows;
@@ -606,13 +527,13 @@ app.put('/api/lobby/inprogress', async (req, res) => {
   }
 });
 
-app.put('/api/lobby/ready', async (req, res) => {
+app.put('/api/lobby/idle', async (req, res) => {
   const { userId } = req.query;
   try {
     const client = await pool.connect();
     const updatedUser = `
     UPDATE lobby 
-    SET status = 'Ready'
+    SET status = 'Idle'
     WHERE user_id = $1;
     `;
     const valueUpdateUser = [userId];
@@ -644,24 +565,6 @@ app.put('/api/lobby/leave', async (req, res) => {
 });
 
 app.put('/api/lobby/uuid', async (req, res) => {
-  const { id, uuid } = req.body;
-  console.log(`uuid: ${uuid}`)
-  try {
-    const client = await pool.connect();
-    const updatedUser = `
-    UPDATE lobby SET lobby_id = $2 WHERE user_id = $1;
-    `;
-    const valueUpdateUser = [id, uuid];
-    const result = await client.query(updatedUser, valueUpdateUser);
-    client.release();
-    res.status(200).json(result.rows[0]);
-  } catch (error) {
-    console.error(error);
-    res.sendStatus(500);
-  }
-});
-
-app.put('/api/lobby/*', async (req, res) => {
   const { id, uuid } = req.body;
   console.log(`uuid: ${uuid}`)
   try {
@@ -740,10 +643,9 @@ app.get('/api/questions/genres', async (req, res) => {
 });
 
 app.get('/api/answers', async (req, res) => {
-  const { game_id, user_id } = req.query;
-  console.log("FETCHING ANSEWERS for GAME " + game_id)
+  const { gameId } = req.query;
   try {
-    const result = await pool.query('SELECT * FROM answers WHERE game_id = $1 AND user_id = $2', [game_id, user_id]);
+    const result = await pool.query('SELECT * FROM answers WHERE game_id = $1', [gameId]);
     const answers = result.rows;
     res.json(answers);
   } catch (err) {
@@ -776,7 +678,7 @@ app.put('/api/reset', async (req, res) => {
 
 app.post('/api/guesses', async (req, res) => {
   const { userId, questionId, userGuess, gameId } = req.body;
-  console.log("ADDING GUESS")
+
   try {
     const client = await pool.connect();
     const queryInsertGuess = `
@@ -797,7 +699,7 @@ app.post('/api/guesses', async (req, res) => {
 
 app.post('/api/answers', async (req, res) => {
   const { userId, questionId, answer, answered, count, gameId } = req.body;
-  console.log("ADDING ANSWER")
+
   try {
     const client = await pool.connect();
     const queryInsertAnswer = `
@@ -835,14 +737,14 @@ app.get('/api/username', async (req, res) => {
     res.json(username)
   } catch (error) {
     console.error(error);
-    res.status(500).send('An error occurred while retrieving the username');
+    res.status(500).send('An error occurred while retrieving the points');
   }
 });
 
 app.get('/api/guesses', async (req, res) => {
-  const { gameId, userId } = req.query;
+  const { gameId } = req.query;
   try {
-    const result = await pool.query('SELECT * FROM guesses WHERE game_id = $1 AND user_id = $2', [gameId, userId]);
+    const result = await pool.query('SELECT * FROM guesses WHERE game_id = $1', [gameId]);
     const guesses = result.rows;
     data = guesses;
     res.json(guesses);
@@ -852,27 +754,25 @@ app.get('/api/guesses', async (req, res) => {
   }
 });
 
-app.put('/api/points', async (req, res) => {
-  const { user_id, points, total } = req.body;
-  console.log("updating points");
-  console.log(`USER: ${user_id}`)
-  console.log(`POINTS: ${points}`)
-  console.log(`TOTAL: ${total}`)
-
+app.put('/api/points', async (req, res) => {      
+  const { userId, points, total } = req.body;
+  if (!userId || !points || !total) {
+    return res.status(400).json({ error: 'userId, points, and total required' });
+  }
   try {
     const queryUpdatePoints = `
-      UPDATE points
-      SET
-        points = points + $2,
-        total_guess = total_guess + $3,
-        total_correct = total_correct + $2,
-        total_incorrect = total_incorrect + ($3 - $2),
-        correct_round = $2,
-        incorrect_round = $3 - $2,
-        total_round = $3
-      WHERE user_id = $1;
-    `;
-    const valuesUpdatePoints = [user_id, points, total];
+        UPDATE points
+        SET
+          points = points + $2,
+          total_guess = total_guess + $3,
+          total_correct = total_correct + $2,
+          total_incorrect = total_incorrect + ($3 - $2),
+          correct_round = $2,
+          incorrect_round = $3 - $2,
+          total_round = $3
+        WHERE user_id = $1;
+      `;
+    const valuesUpdatePoints = [userId, points, total];
     const result = await pool.query(queryUpdatePoints, valuesUpdatePoints);
     const savedPoints = result.rows[0];
     res.json(savedPoints);
@@ -899,18 +799,6 @@ app.get('/api/stats', async (req, res) => {
     res.status(500).send('An error occurred while retrieving the questions');
   }
 });
-
-app.get('/api/games/player1', async (req, res) => {
-  const { game_id } = req.query;
-  try {
-    const result = await pool.query('SELECT player1_id FROM games WHERE id = $1', [game_id]);
-    res.json(result.rows); // Use result.rows instead of result.data
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('An error occurred while retrieving the questions');
-  }
-});
-
 
 app.post('/api/users', async (req, res) => {
   const { userName, email, password } = req.body;
@@ -963,6 +851,10 @@ app.post('/api/correct', (req, res) => {
   // res.json(results);
 });
 
+// define a route for the root path
+app.get('/', (req, res) => {
+  res.send('Hello, world!');
+});
 
 ///-----------------------LOGIN-------------------------\\\
 
@@ -1040,3 +932,5 @@ async function getUsernameByID(id) {
     client.release();
   }
 }
+
+app.listen(3001, () => console.log('Server started on port 3001'));
