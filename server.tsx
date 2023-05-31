@@ -214,7 +214,8 @@ wssServer.on('connection', function connection(ws, req) {
 });
 
 app.listen(process.env.PORT || 3001, () => {
-  console.log('Server started on port');
+  console.log('Server started on port' + process.env.PORT);
+  console.log('WebSocketServer started on port' + process.env.WS);
 });
 
 const pool = new Pool({
