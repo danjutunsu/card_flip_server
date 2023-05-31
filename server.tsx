@@ -202,7 +202,7 @@ wssServer.on('connection', function connection(ws, req) {
 });
 
 // const port = 3002;
-server.listen(process.env.PORT || 3002, () => {
+server.listen(process.env.WS || 3002, () => {
   console.log(`WebSocket server listening on port ${process.env.PORT}`);
 });
 
