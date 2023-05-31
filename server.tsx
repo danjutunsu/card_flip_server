@@ -445,7 +445,7 @@ app.put('/api/games/genre', async (req, res) => {
   }
 });
 
-app.get('/api/lobby', async (req, res) => {
+app.get('/lobby', async (req, res) => {
   const { uuid } = req.query;
   console.log(`UUID: ${uuid}`)
   try {
@@ -465,7 +465,7 @@ app.get('/api/lobby', async (req, res) => {
   }
 });
 
-app.post('/api/lobby', async (req, res) => {
+app.post('/lobby', async (req, res) => {
   const { userId } = req.body;
   try {
     const username = await getUsernameByID(userId)
@@ -484,7 +484,7 @@ app.post('/api/lobby', async (req, res) => {
   }
 });
 
-app.put('/api/lobby', async (req, res) => {
+app.put('/lobby', async (req, res) => {
   const { userId } = req.query;
   try {
     const client = await pool.connect();
@@ -508,7 +508,7 @@ app.put('/api/lobby', async (req, res) => {
   }
 });
 
-app.put('/api/lobby/inprogress', async (req, res) => {
+app.put('/lobby/inprogress', async (req, res) => {
   const { userId } = req.query;
   try {
     const client = await pool.connect();
@@ -527,7 +527,7 @@ app.put('/api/lobby/inprogress', async (req, res) => {
   }
 });
 
-app.put('/api/lobby/idle', async (req, res) => {
+app.put('/lobby/idle', async (req, res) => {
   const { userId } = req.query;
   try {
     const client = await pool.connect();
@@ -546,7 +546,7 @@ app.put('/api/lobby/idle', async (req, res) => {
   }
 });
 
-app.put('/api/lobby/leave', async (req, res) => {
+app.put('/lobby/leave', async (req, res) => {
   const { userId, uuid } = req.body;
   console.log('TRIGGERED');
   try {
@@ -600,7 +600,7 @@ app.put('/lobby/:lobbyId', async (req, res) => {
   }
 });
 
-app.delete('/api/lobby', async (req, res) => {
+app.delete('/lobby', async (req, res) => {
   const { userId } = req.query;
   try {
     const client = await pool.connect();
