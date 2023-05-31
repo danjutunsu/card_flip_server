@@ -30,6 +30,7 @@ const wssServer = new WebSocketServer({ server });
 const clients = new Array
 
 wssServer.on('connection', function connection(wss, req) {
+  console.log(`WEBSOCKET CONNECTED`)
   let currentStatus = { value: '' }
   let hasUserId = false;
 
