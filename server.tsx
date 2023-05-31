@@ -31,7 +31,7 @@ const server = require('https').createServer(app);
 
 app.use(cors())
 // const port = 3002;
-server.listen(process.env.WS || 3002, () => {
+server.listen(process.env.PORT || 3002, () => {
   console.log(`WebSocket server listening on port ${process.env.PORT}`);
 });
 
@@ -213,10 +213,10 @@ wssServer.on('connection', function connection(ws, req) {
   });
 });
 
-app.listen(process.env.PORT || 3001, () => {
-  console.log('Server started on port' + process.env.PORT);
-  console.log('WebSocketServer started on port' + process.env.WS);
-});
+// app.listen(process.env.PORT || 3001, () => {
+//   console.log('Server started on port' + process.env.PORT);
+//   console.log('WebSocketServer started on port' + process.env.WS);
+// });
 
 const pool = new Pool({
     user: 'postgres',
