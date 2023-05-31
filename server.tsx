@@ -483,7 +483,7 @@ app.get('/lobby', async (req, res) => {
   }
 });
 
-app.get('/api/lobby', (req, res) => {
+app.get('/api/lobby', async (req, res) => {
   const { uuid } = req.query;
   console.log(`UUID: ${uuid}`);
 
@@ -491,20 +491,19 @@ app.get('/api/lobby', (req, res) => {
   // For example, query the database or access other resources
 
   try {
-    // Example response data
-    const users = [
-      { userId: 1, username: 'user1', status: 'Ready' },
-      { userId: 2, username: 'user2', status: 'Ready' },
-      // Add more user objects as needed
-    ];
-
+    const client = await pool.connect();
+    const queryGetUsers = `
+      SELECT user_id, username, status FROM lobby WHERE lobby_id = $1;
+    `;
+    const values = [uuid]
+    const resultGetUsers = await client.query(queryGetUsers, values);
+    client.release();
+    const users = resultGetUsers.rows;
     const allUsersReady = users.every(user => user.status === 'Ready');
-
-    // Return the response as JSON
-    res.json({ users, allUsersReady });
+    res.json({ users, allUsersReady }); // Return users and flag indicating if all users are ready
   } catch (error) {
     console.error(error);
-    res.status(500).send('An error occurred while retrieving the lobby data');
+    res.status(500).send('An error occurred while retrieving the lobby users');
   }
 });
 
