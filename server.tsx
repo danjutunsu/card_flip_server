@@ -564,7 +564,7 @@ app.put('/api/lobby/leave', async (req, res) => {
   }
 });
 
-app.put('/api/lobby/uuid', async (req, res) => {
+app.put('/lobby/uuid', async (req, res) => {
   const { id, uuid } = req.body;
   console.log(`uuid: ${uuid}`)
   try {
@@ -582,7 +582,7 @@ app.put('/api/lobby/uuid', async (req, res) => {
   }
 });
 
-app.put('/api/lobby/:lobbyId', async (req, res) => {
+app.put('/lobby/:lobbyId', async (req, res) => {
   const { lobbyId } = req.params;
   const { userId } = req.body;
   try {
