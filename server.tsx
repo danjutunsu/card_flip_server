@@ -29,9 +29,7 @@ app.use(function (req, res, next) {
 
 // const port = 3002;
 const server = express()
-  .use((req, res) => res.sendFile({ root: __dirname }))
   .listen(PORT, () => console.log(`Listening on ${PORT}`));
-
 
 const wssServer = new WebSocketServer({ server });
 const clients = new Array
