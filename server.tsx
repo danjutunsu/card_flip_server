@@ -30,25 +30,25 @@ const server = require('https').createServer(app);
 const wssServer = new WebSocketServer({ server });
 const clients = new Array
 
-wssServer.on('connection', function connection(wss, req) {
+wssServer.on('connection', function connection(ws, req) {
   console.log(`WEBSOCKET CONNECTED`)
   let currentStatus = { value: '' }
   let hasUserId = false;
 
   const userId = req.url.split('=')[1];
-  wss.userId = userId;
+  ws.userId = userId;
 
   clients.forEach((element) => {
-    if (element.userId === wss.userId) {
+    if (element.userId === ws.userId) {
       hasUserId = true;
     }
   });
   
   if (hasUserId) {
-    console.log(`At least one websocket contains the userId ${wss.userId}`);
+    console.log(`At least one websocket contains the userId ${ws.userId}`);
   } else {
-    console.log(`None of the websockets contain the userId ${wss.userId}`);
-    clients.push(wss);
+    console.log(`None of the websockets contain the userId ${ws.userId}`);
+    clients.push(ws);
   }
 
   console.log(`Client list before connection:`)
@@ -64,7 +64,7 @@ wssServer.on('connection', function connection(wss, req) {
   });
 
   // Handle messages from the client
-wss.on('message', function incoming(message) {
+  ws.on('message', function incoming(message) {
   console.log('received: %s', message);
 
   const data = JSON.parse(message)
@@ -89,7 +89,7 @@ wss.on('message', function incoming(message) {
   }
 
   if (data.payload === 'logout') {
-    const index = clients.indexOf(wss);
+    const index = clients.indexOf(ws);
     clients.forEach((client) => {
       const logout = data.payload;
       client.send(JSON.stringify({ logout }))
@@ -186,7 +186,7 @@ wss.on('message', function incoming(message) {
 });
 
   // Handle the WebSocket connection being closed
-wss.on('close', function close() {
+  ws.on('close', function close() {
   console.log('WebSocket connection closed');
   console.log(`Client list after close:`)
   clients.forEach(element => {
@@ -194,7 +194,7 @@ wss.on('close', function close() {
   });
   
   // Remove the client's socket object from the clients array
-  const index = clients.indexOf(wss);
+  const index = clients.indexOf(ws);
   if (index > -1) {
     clients.splice(index, 1);
   }
