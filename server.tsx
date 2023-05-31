@@ -507,7 +507,7 @@ app.get('/api/lobby', async (req, res) => {
   }
 });
 
-app.get('/api/lobby/:lobbyid', async (req, res) => {
+app.get('/api/lobby/:lobbyId', async (req, res) => {
   const lobbyId = req.params.lobbyId;
   
   try {
