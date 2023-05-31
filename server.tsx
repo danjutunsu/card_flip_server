@@ -464,6 +464,8 @@ app.put('/api/games/genre', async (req, res) => {
 });
 
 app.get('/api/lobby', async (req, res) => {
+  console.log(`HERE`)
+
   const { uuid } = req.query;
   console.log(`UUID: ${uuid}`)
   try {
@@ -508,6 +510,7 @@ app.get('/api/lobby', async (req, res) => {
 // });
 
 app.get('/lobby/:lobbyId', async (req, res) => {
+  console.log(`OR HERE`)
   const lobbyId = req.params.lobbyId;
   
   try {
