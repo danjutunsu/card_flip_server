@@ -463,7 +463,7 @@ app.put('/api/games/genre', async (req, res) => {
   }
 });
 
-app.get('/lobby', async (req, res) => {
+app.get('/api/lobby', async (req, res) => {
   const { uuid } = req.query;
   console.log(`UUID: ${uuid}`)
   try {
@@ -483,29 +483,29 @@ app.get('/lobby', async (req, res) => {
   }
 });
 
-app.get('/api/lobby', async (req, res) => {
-  const { uuid } = req.query;
-  console.log(`UUID: ${uuid}`);
+// app.get('/api/lobby', async (req, res) => {
+//   const { uuid } = req.query;
+//   console.log(`UUID: ${uuid}`);
 
-  // Perform the necessary logic to retrieve lobby data based on the UUID
-  // For example, query the database or access other resources
+//   // Perform the necessary logic to retrieve lobby data based on the UUID
+//   // For example, query the database or access other resources
 
-  try {
-    const client = await pool.connect();
-    const queryGetUsers = `
-      SELECT user_id, username, status FROM lobby WHERE lobby_id = $1;
-    `;
-    const values = [uuid]
-    const resultGetUsers = await client.query(queryGetUsers, values);
-    client.release();
-    const users = resultGetUsers.rows;
-    const allUsersReady = users.every(user => user.status === 'Ready');
-    res.json({ users, allUsersReady }); // Return users and flag indicating if all users are ready
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('An error occurred while retrieving the lobby users');
-  }
-});
+//   try {
+//     const client = await pool.connect();
+//     const queryGetUsers = `
+//       SELECT user_id, username, status FROM lobby WHERE lobby_id = $1;
+//     `;
+//     const values = [uuid]
+//     const resultGetUsers = await client.query(queryGetUsers, values);
+//     client.release();
+//     const users = resultGetUsers.rows;
+//     const allUsersReady = users.every(user => user.status === 'Ready');
+//     res.json({ users, allUsersReady }); // Return users and flag indicating if all users are ready
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send('An error occurred while retrieving the lobby users');
+//   }
+// });
 
 app.get('/lobby/:lobbyId', async (req, res) => {
   const lobbyId = req.params.lobbyId;
