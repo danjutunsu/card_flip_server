@@ -187,7 +187,7 @@ ws.on('close', function close() {
 });
 
 const port = 3002;
-server.listen(process.env.PORT, () => {
+server.listen(process.env.WS, () => {
   console.log(`WebSocket server listening on port ${port}`);
 });
 
@@ -445,7 +445,7 @@ app.put('/api/games/genre', async (req, res) => {
   }
 });
 
-app.get('/lobby', async (req, res) => {
+app.get('/api/lobby', async (req, res) => {
   const { uuid } = req.query;
   console.log(`UUID: ${uuid}`)
   try {
