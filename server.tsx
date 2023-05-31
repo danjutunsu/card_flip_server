@@ -201,8 +201,8 @@ wss.on('close', function close() {
 });
 
 // const port = 3002;
-server.listen(process.env.WS, () => {
-  console.log(`WebSocket server listening on port ${process.env.WS}`);
+server.listen(process.env.PORT, () => {
+  console.log(`WebSocket server listening on port ${process.env.PORT}`);
 });
 
 const pool = new Pool({
