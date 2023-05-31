@@ -6,6 +6,7 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
+const dburl = process.env.DB_URL
 const dbpass = process.env.DB_PASSWORD
 const { WebSocketServer } = require('ws')
 
@@ -201,13 +202,13 @@ wss.on('close', function close() {
 });
 
 // const port = 3002;
-server.listen(process.env.PORT, () => {
-  console.log(`WebSocket server listening on port ${process.env.PORT}`);
+server.listen(process.env.WS, () => {
+  console.log(`WebSocket server listening on port ${process.env.WS}`);
 });
 
 const pool = new Pool({
     user: 'postgres',
-    host: '71.231.200.46',
+    host: dburl,
     database: 'trivia',
     password: dbpass,
     port: 5432, // the default PostgreSQL port
