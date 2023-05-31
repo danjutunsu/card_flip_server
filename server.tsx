@@ -508,7 +508,7 @@ app.get('/api/lobby', async (req, res) => {
 });
 
 app.get('/api/lobby/:lobbyId', async (req, res) => {
-  const lobbyId = req.params.lobbyId;
+  const lobbyId = req.query;
   
   try {
     const client = await pool.connect();
