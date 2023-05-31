@@ -184,6 +184,9 @@ wssServer.on('connection', function connection(ws, req) {
     })
   }
 });
+  ws.onopen = (e) => {
+    console.log("SOCKET CONNECTED");
+  };
 
   // Handle the WebSocket connection being closed
   ws.on('close', function close() {
