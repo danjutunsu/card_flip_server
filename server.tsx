@@ -8,8 +8,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const dburl = process.env.DB_URL
 const dbpass = process.env.DB_PASSWORD
-const expressWs = require('express-ws')(app)
-// const { WebSocketServer } = require('ws')
+const { WebSocketServer } = require('ws')
 
 app.use(cors()); // Allow cross-origin requests
 
@@ -27,13 +26,11 @@ app.use(function (req, res, next) {
     next();
   });
 
-const server  = express()
-  .use(cors)
-  .use(express.json())
-  .listen (process.env.PORT, () => console.log('listenining on ' + process.env.PORT))
+const server = require('https').createServer(app);
+const wssServer = new WebSocketServer({ server });
 const clients = new Array
 
-server.on('connection', function connection(wss, req) {
+wssServer.on('connection', function connection(wss, req) {
   console.log(`WEBSOCKET CONNECTED`)
   let currentStatus = { value: '' }
   let hasUserId = false;
