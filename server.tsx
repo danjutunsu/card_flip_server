@@ -90,8 +90,11 @@ wssServer.on('connection', function connection(ws, req) {
 const port = process.env.PORT || 3002;
 server.listen(port, () => {
   console.log(`WebSocket server listening on port ${port}`);
-  console.log('Express server started on port ' + port);
 });
+
+app.listen(port, () => {
+  console.log('Express server started on port ' + port);
+})
 
 const pool = new Pool({
     user: 'postgres',
