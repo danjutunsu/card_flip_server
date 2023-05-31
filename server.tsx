@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const dburl = process.env.DB_URL
 const dbpass = process.env.DB_PASSWORD
-const { WebSocketServer } = require('express-ws')
+const { WebSocketServer } = require('ws')
 
 app.use(cors()); // Allow cross-origin requests
 
