@@ -212,15 +212,15 @@ let data;
 app.use(express.json())
 app.use(cors())
 
-app.get('/api/games', async (req, res) => {
+app.get('/games', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM games WHERE player1_id IS NULL or player2_id IS NULL');
     if (result.rows.length > 0) {
-      console.log(`/api/clients - Step 1`)
+      console.log(`/clients - Step 1`)
       res.json(result);
       console.log(`result for game rows: ${result}`)
     } else if (result.rows.length === 0) {
-      console.log(`/api/clients - Step 2`)
+      console.log(`/clients - Step 2`)
       
       const userId = req.query.userId;
       const valuesInsertPoints = [userId];
@@ -229,7 +229,7 @@ app.get('/api/games', async (req, res) => {
       VALUES ($1, 0, 1)`
       await pool.query(gameInsert, valuesInsertPoints);
     } else {
-      console.log(`/api/clients - Step 3`)
+      console.log(`/clients - Step 3`)
       // Get the first row from the result where player1_id or player2_id is null
       const gameRow = result.rows.find(row => row.player1_id === null || row.player2_id === null);
       // Update the game row with the userId
@@ -248,7 +248,7 @@ app.get('/api/games', async (req, res) => {
   }
 });
 
-app.get('/api/games/id', async (req, res) => {
+app.get('/games/id', async (req, res) => {
   const { player1, player2 } = req.query;
   try {
     // execute the query and get the result
@@ -292,7 +292,7 @@ app.get('/api/games/id', async (req, res) => {
   }
 })
 
-app.post('/api/games', async (req, res) => {
+app.post('/games', async (req, res) => {
   const { player1, player2 } = req.query;
   try {
     const gameInsert =
@@ -317,7 +317,7 @@ app.post('/api/games', async (req, res) => {
   }
 })
 
-app.get('/api/games/status', async (req, res) => {
+app.get('/games/status', async (req, res) => {
   const { player1, player2 } = req.query;
   try {
     // execute the query and get the result
@@ -341,7 +341,7 @@ app.get('/api/games/status', async (req, res) => {
   }
 })
 
-app.put('/api/games/status', async (req, res) => {
+app.put('/games/status', async (req, res) => {
   const { player1, player2 } = req.body;
   try {
     const client = await pool.connect();
@@ -365,7 +365,7 @@ app.put('/api/games/status', async (req, res) => {
   }
 });
 
-app.get('/api/games/turn', async (req, res) => {
+app.get('/games/turn', async (req, res) => {
   const { gameId } = req.query;
   console.log(`GameId: ${gameId}`)
   try {
@@ -385,7 +385,7 @@ app.get('/api/games/turn', async (req, res) => {
   }
 });
 
-app.get('/api/games/genre', async (req, res) => {
+app.get('/games/genre', async (req, res) => {
   const { player1, player2 } = req.query;
   try {
     const getGameGenre = `
@@ -402,7 +402,7 @@ app.get('/api/games/genre', async (req, res) => {
   }
 });
 
-app.put('/api/games/turn', async (req, res) => {
+app.put('/games/turn', async (req, res) => {
   const { player1, player2 } = req.body
   try {
     const client = await pool.connect();
@@ -426,7 +426,7 @@ app.put('/api/games/turn', async (req, res) => {
   }
 });
 
-app.put('/api/games/genre', async (req, res) => {
+app.put('/games/genre', async (req, res) => {
   const { player1, player2, genre } = req.body
   try {
     const client = await pool.connect();
@@ -617,7 +617,7 @@ app.delete('/lobby', async (req, res) => {
   }
 });
 
-app.get('/api/questions', async (req, res) => {
+app.get('/questions', async (req, res) => {
   const { genre } = req.query
   try {
     const result = await pool.query(`SELECT * FROM ${genre}`);
@@ -630,7 +630,7 @@ app.get('/api/questions', async (req, res) => {
   }
 });
 
-app.get('/api/questions/genres', async (req, res) => {
+app.get('/questions/genres', async (req, res) => {
   try {
     const result = await pool.query(`SELECT * FROM questions`);
     const questions = result.rows;
@@ -642,7 +642,7 @@ app.get('/api/questions/genres', async (req, res) => {
   }
 });
 
-app.get('/api/answers', async (req, res) => {
+app.get('/answers', async (req, res) => {
   const { gameId } = req.query;
   try {
     const result = await pool.query('SELECT * FROM answers WHERE game_id = $1', [gameId]);
@@ -654,7 +654,7 @@ app.get('/api/answers', async (req, res) => {
   }
 });
 
-app.put('/api/reset', async (req, res) => {
+app.put('/reset', async (req, res) => {
   const { userId, userId2 } = req.body;
   console.log("CALLED RESET")
   try {
@@ -676,7 +676,7 @@ app.put('/api/reset', async (req, res) => {
   }
 });
 
-app.post('/api/guesses', async (req, res) => {
+app.post('/guesses', async (req, res) => {
   const { userId, questionId, userGuess, gameId } = req.body;
 
   try {
@@ -697,7 +697,7 @@ app.post('/api/guesses', async (req, res) => {
   }
 });
 
-app.post('/api/answers', async (req, res) => {
+app.post('/answers', async (req, res) => {
   const { userId, questionId, answer, answered, count, gameId } = req.body;
 
   try {
@@ -718,7 +718,7 @@ app.post('/api/answers', async (req, res) => {
   }
 });
 
-app.get('/api/points', async (req, res) => {
+app.get('/points', async (req, res) => {
   const { userId } = req.query;
   try {
     const { rows } = await pool.query('SELECT * FROM points WHERE user_id = $1', [userId]);
@@ -730,7 +730,7 @@ app.get('/api/points', async (req, res) => {
   }
 });
 
-app.get('/api/username', async (req, res) => {
+app.get('/username', async (req, res) => {
   const { userId } = req.query;
   try {
     const username = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
@@ -741,7 +741,7 @@ app.get('/api/username', async (req, res) => {
   }
 });
 
-app.get('/api/guesses', async (req, res) => {
+app.get('/guesses', async (req, res) => {
   const { gameId } = req.query;
   try {
     const result = await pool.query('SELECT * FROM guesses WHERE game_id = $1', [gameId]);
@@ -754,7 +754,7 @@ app.get('/api/guesses', async (req, res) => {
   }
 });
 
-app.put('/api/points', async (req, res) => {      
+app.put('/points', async (req, res) => {      
   const { userId, points, total } = req.body;
   if (!userId || !points || !total) {
     return res.status(400).json({ error: 'userId, points, and total required' });
@@ -782,7 +782,7 @@ app.put('/api/points', async (req, res) => {
   }
 });
   
-app.get('/api/stats', async (req, res) => {
+app.get('/stats', async (req, res) => {
   try {
     let count = 0;
     let total = 0;
@@ -800,7 +800,7 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-app.post('/api/users', async (req, res) => {
+app.post('/users', async (req, res) => {
   const { userName, email, password } = req.body;
   if (userName && email && password) {
     try {
@@ -817,7 +817,7 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-app.get('/api/user', async (req, res) => {
+app.get('/user', async (req, res) => {
   try {
     const { uId } = req.query;
     const result = await pool.query('SELECT * FROM users WHERE "id" = $1', [uId]);
@@ -830,7 +830,7 @@ app.get('/api/user', async (req, res) => {
   }
 });
 
-app.get('/api/users/invite', async (req, res) => {
+app.get('/users/invite', async (req, res) => {
   try {
     const { username } = req.query;
     const result = await pool.query('SELECT * FROM users WHERE "username" ILIKE $1', [username]);
@@ -843,7 +843,7 @@ app.get('/api/users/invite', async (req, res) => {
 });
 
 // define an endpoint to submit guesses from the second player
-app.post('/api/correct', (req, res) => {
+app.post('/correct', (req, res) => {
   // code to process guesses from request body
   const guesses = req.body.guesses;
   // code to validate guesses and calculate results
