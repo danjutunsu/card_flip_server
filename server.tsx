@@ -463,7 +463,7 @@ app.put('/api/games/genre', async (req, res) => {
   }
 });
 
-app.get('/api/lobby', async (req, res) => {
+app.get('/lobby', async (req, res) => {
   const { uuid } = req.query;
   console.log(`UUID: ${uuid}`)
   try {
