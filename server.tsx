@@ -32,6 +32,7 @@ const server = express()
   .listen(PORT, () => console.log(`Listening on ${PORT}`));
 
 const wssServer = new WebSocketServer({ server });
+
 const clients = new Array
 
 wssServer.on('connection', function connection(ws, req) {
@@ -208,7 +209,7 @@ wssServer.on('connection', function connection(ws, req) {
   });
 });
 
-app.listen(process.env.PORT || 3001, () => {
+app.listen(process.env.WS || 3001, () => {
   console.log('Server started on port');
 });
 
