@@ -26,7 +26,7 @@ app.use(function (req, res, next) {
     next();
   });
 
-const server = require('http').createServer(app);
+const server = require('https').createServer(app);
 const wssServer = new WebSocketServer({ server });
 const clients = new Array
 
@@ -203,7 +203,7 @@ wssServer.on('connection', function connection(ws, req) {
 
 // const port = 3002;
 server.listen(process.env.PORT || 3002, () => {
-  console.log(`WebSocket server listening on port ${process.env.WS}`);
+  console.log(`WebSocket server listening on port ${process.env.PORT}`);
 });
 
 const pool = new Pool({
