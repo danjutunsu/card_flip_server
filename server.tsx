@@ -1,43 +1,38 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
+const cors = require('cors'); // import the cors middleware
 const app = express();
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
+const dburl = process.env.DB_URL
+const dbpass = process.env.DB_PASSWORD
+const { WebSocketServer } = require('ws')
 
-const dburl = process.env.DB_URL;
-const dbpass = process.env.DB_PASSWORD;
+app.use(cors()); // Allow cross-origin requests
 
-// Enable CORS for all routes
-app.use(cors());
-
-// Other routes and middleware...
-
-// Enable CORS specifically for the /api/login route
-app.options('/api/login', cors());
-
-app.post('/api/login', (req, res) => {
-  // Your login logic...
-
-  // Send the response with CORS headers
-  res.header('Access-Control-Allow-Origin', 'https://frontend-legendary-monstera-8d33f0.netlify.app');
-  res.header('Access-Control-Allow-Methods', 'POST');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
-
-  // Send the response data
-  res.send({ message: 'Login successful' });
+// define a route for the root path
+app.get('/', (req, res) => {
+  // res.send('Hello, world!');
 });
 
+app.use(function (req, res, next) {
+  //Enabling CORS
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, " +
+  "Accept, x-client-key, x-client-token, x-client-secret, Authorization");
+    next();
+  });
+
 const server = require('https').createServer(app);
-const MyWebSocket = require('ws'); // Modified import statement
-const wssServer = new MyWebSocket.Server({ server });
-const clients = new Array();
+const wssServer = new WebSocketServer({ server });
+const clients = new Array
 
 wssServer.on('connection', function connection(ws, req) {
-  console.log(`WEBSOCKET CONNECTED`);
-  let currentStatus = { value: '' };
+  console.log(`WEBSOCKET CONNECTED`)
+  let currentStatus = { value: '' }
   let hasUserId = false;
 
   const userId = req.url.split('=')[1];
@@ -48,7 +43,7 @@ wssServer.on('connection', function connection(ws, req) {
       hasUserId = true;
     }
   });
-
+  
   if (hasUserId) {
     console.log(`At least one websocket contains the userId ${ws.userId}`);
   } else {
@@ -56,44 +51,165 @@ wssServer.on('connection', function connection(ws, req) {
     clients.push(ws);
   }
 
-  console.log(`Client list before connection:`);
-  clients.forEach((element) => {
-    console.log(element.userId);
+  console.log(`Client list before connection:`)
+    clients.forEach(element => {
+      console.log(element.userId)
   });
 
   console.log(`User ${userId} connected to the WebSocket server.`);
-
-  console.log(`Client list after connection:`);
-  clients.forEach((element) => {
-    console.log(`${element.userId} at place ${clients.indexOf(element)}`);
+  
+  console.log(`Client list after connection:`)
+    clients.forEach(element => {
+      console.log(`${element.userId} at place ${clients.indexOf(element)}`)
   });
 
+  // Handle messages from the client
   ws.on('message', function incoming(message) {
-    console.log('received: %s', message);
-    // Rest of your message handling code...
-  });
+  console.log('received: %s', message);
 
-  ws.on('close', function close() {
-    console.log('WebSocket connection closed');
-    console.log(`Client list after close:`);
-    clients.forEach((element) => {
-      console.log(`${element.userId} at place ${clients.indexOf(element)}`);
-    });
+  const data = JSON.parse(message)
 
+  // Send all clients a message to navigate to the stats page to force navigation at game's end
+  if (data.payload === 'end') {
+    clients.forEach((client) => {
+      const end_game = data.payload;
+      console.log(`Sending end_game message`)
+  
+      client.send(JSON.stringify({ end_game }))
+    })
+  }
+
+  if (data.payload === 'reset') {
+
+    clients.forEach((client) => {
+      const reset = data.payload;
+      
+      client.send(JSON.stringify({ reset }))
+    })
+  }
+
+  if (data.payload === 'logout') {
     const index = clients.indexOf(ws);
-    if (index > -1) {
-      clients.splice(index, 1);
-    }
+    clients.forEach((client) => {
+      const logout = data.payload;
+      client.send(JSON.stringify({ logout }))
+    })
+
+    clients.splice(index, 1)
+  }
+
+  if (data.payload === 'leave') {
+    clients.forEach((client) => {
+      const leave = data.payload;
+
+      client.send(JSON.stringify({ leave }))
+    })
+  }
+
+  if (data.type === 'user_status_update') {
+    clients.forEach((client) => {
+      const user_status_update = data.payload;
+
+      client.send(JSON.stringify({ user_status_update }))
+    })
+  }
+
+  if (data.type === 'invite') {
+    clients.forEach((client) => {
+      console.log(`${client.userId}`)
+      if (client.userId === data.payload.recipient.toString()) {
+        const invite = data.payload;
+
+        console.log(`sender ${client.userId}`)
+        console.log(`recipient ${data.payload.recipient}`)
+
+        client.send(JSON.stringify({ invite }))
+      }
+    })
+  }
+
+  if (data.type === 'invitee') {
+    clients.forEach((client) => {
+      console.log(`CLIENT ID: ${client.userId}`)
+      if (client.userId === data.payload.userId.toString() || client.userId === data.payload.sender.toString()) {
+        const invitee = data.payload;
+
+        console.log(`INVITING ${data.payload.userId}`)
+
+        client.send(JSON.stringify({ invitee }))
+      }
+    })
+  }
+  //
+
+  if (data.type === 'user_rejected') {
+    console.log(`REJECTED: ${data.payload.reject}`)
+    console.log(`REQUESTED ${data.payload.request}`)
+    clients.forEach((client) => {
+      console.log(`CLIENT ID: ${client.userId}`)
+      if (client.userId === data.payload.request.toString()) {
+        const user_rejected = data.payload;
+        console.log(`${data.payload.reject} rejected`)
+
+        client.send(JSON.stringify({ user_rejected }))
+      }
+    })
+  }
+
+  if (data.type === 'refresh') {
+    clients.forEach((client) => {
+      console.log(`CLIENT ID: ${client.userId}`)
+      if (client.userId === data.payload.user1.toString() || client.userId === data.payload.user2.toString()) {
+        const refresh = data.payload;
+        console.log(`refreshing`)
+
+        client.send(JSON.stringify({ refresh }))
+      }
+    })
+  }
+
+  if (data.payload.message === 'set genre') {
+    const genreToSet = data.payload.genre;
+
+    clients.forEach((client) => {
+      client.send(JSON.stringify({ genreToSet }))
+    })
+  }
+  
+  if (data.type === 'connected') {
+    const connected = data.payload;
+
+    clients.forEach((client) => {
+      client.send(JSON.stringify({ connected }))
+    })
+  }
+});
+
+  // Handle the WebSocket connection being closed
+  ws.on('close', function close() {
+  console.log('WebSocket connection closed');
+  console.log(`Client list after close:`)
+  clients.forEach(element => {
+    console.log(`${element.userId} at place ${clients.indexOf(element)}`)
+  });
+  
+  // Remove the client's socket object from the clients array
+  const index = clients.indexOf(ws);
+  if (index > -1) {
+    clients.splice(index, 1);
+  }
   });
 });
 
-server.listen(process.env.WS, () => {
-  console.log(`WebSocket server listening on port ${process.env.WS}`);
+app.use(cors())
+// const port = 3002;
+server.listen(process.env.WS || 3002, () => {
+  console.log(`WebSocket server listening on port ${process.env.PORT}`);
 });
 
 app.listen(process.env.PORT || 3001, () => {
-  console.log(`Express server started on port ${process.env.WS}`);
-})
+  console.log('Server started on port');
+});
 
 const pool = new Pool({
     user: 'postgres',
