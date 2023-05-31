@@ -10,19 +10,24 @@ const { body, validationResult } = require('express-validator');
 const dburl = process.env.DB_URL;
 const dbpass = process.env.DB_PASSWORD;
 
+// Enable CORS for all routes
 app.use(cors());
 
-app.get('/', (req, res) => {
-  // res.send('Hello, world!');
-});
+// Other routes and middleware...
 
-app.use(function (req, res, next) {
-  //Enabling CORS
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, " +
-  "Accept, x-client-key, x-client-token, x-client-secret, Authorization");
-  next();
+// Enable CORS specifically for the /api/login route
+app.options('/api/login', cors());
+
+app.post('/api/login', (req, res) => {
+  // Your login logic...
+
+  // Send the response with CORS headers
+  res.header('Access-Control-Allow-Origin', 'https://frontend-legendary-monstera-8d33f0.netlify.app');
+  res.header('Access-Control-Allow-Methods', 'POST');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Send the response data
+  res.send({ message: 'Login successful' });
 });
 
 const server = require('https').createServer(app);
