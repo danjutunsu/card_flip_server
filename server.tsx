@@ -187,7 +187,7 @@ ws.on('close', function close() {
 });
 
 const port = 3002;
-server.listen(process.env.WS, () => {
+server.listen(process.env.WS || 8080, () => {
   console.log(`WebSocket server listening on port ${port}`);
 });
 
