@@ -859,7 +859,7 @@ app.get('/', (req, res) => {
 ///-----------------------LOGIN-------------------------\\\
 
 // Define the login route
-app.post('/api/login', [
+app.post('/login', [
   // Validate the request body
   body('username').notEmpty(),
   body('password').notEmpty(),
