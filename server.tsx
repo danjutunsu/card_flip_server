@@ -9,7 +9,6 @@ const { body, validationResult } = require('express-validator');
 const dburl = process.env.DB_URL
 const dbpass = process.env.DB_PASSWORD
 const { WebSocketServer } = require('ws')
-const PORT = process.env.PORT || 3001;
 
 app.use(cors()); // Allow cross-origin requests
 
@@ -27,12 +26,17 @@ app.use(function (req, res, next) {
     next();
   });
 
+const server = require('https').createServer(app);
+
+
+app.use(cors())
 // const port = 3002;
-const server = express()
-  .listen(PORT, () => console.log(`Listening on ${PORT}`));
+server.listen(process.env.WS || 3002, () => {
+  console.log(`WebSocket server listening on port ${process.env.PORT}`);
+});
+
 
 const wssServer = new WebSocketServer({ server });
-
 const clients = new Array
 
 wssServer.on('connection', function connection(ws, req) {
@@ -209,7 +213,7 @@ wssServer.on('connection', function connection(ws, req) {
   });
 });
 
-app.listen(process.env.WS || 3001, () => {
+app.listen(process.env.PORT || 3001, () => {
   console.log('Server started on port');
 });
 
