@@ -403,7 +403,7 @@ app.get('/games/player1', async (req, res) => {
     );
     if (result.rows && result.rows.length > 0) {
       const player1_id = result.rows[0].player1_id;
-      res.status(200).json({ turn_id: player1_id });
+      res.status(200).json({ player1_id: player1_id });
     } else {
       res.status(404).json({ error: 'Player 1 not found' });
     }
