@@ -194,10 +194,6 @@ ws.on('close', function close() {
   });
 });
 
-server.listen(process.env.WS || 3002, () => {
-  console.log(`WebSocket server listening on port ${process.env.WS}`);
-});
-
 const pool = new Pool({
     user: 'postgres',
     host: dburl,
