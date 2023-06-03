@@ -30,6 +30,7 @@ server.listen(process.env.PORT, () => console.log('Server started on port ' + pr
 const heartbeat = () => {
   clients.forEach((ws) => {
     if (!ws.isAlive) {
+      console.log(`closing connection to ${ws.userId}`)
       // Client is inactive, terminate the connection
       return ws.terminate();
     }
