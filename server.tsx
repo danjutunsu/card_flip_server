@@ -393,6 +393,26 @@ app.get('/games/turn', async (req, res) => {
   }
 });
 
+app.get('/games/player1', async (req, res) => {
+  const { gameId } = req.query;
+  console.log(`GameId: ${gameId}`)
+  try {
+    const result = await pool.query(
+      'SELECT player1_id FROM games WHERE id = $1',
+      [gameId]
+    );
+    if (result.rows && result.rows.length > 0) {
+      const turnId = result.rows[0].player1_id;
+      res.status(200).json({ turn_id: turnId });
+    } else {
+      res.status(404).json({ error: 'Player 1 not found' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.get('/games/genre', async (req, res) => {
   const { player1, player2 } = req.query;
   try {
