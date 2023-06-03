@@ -19,6 +19,8 @@ app.use(cors());
 // Create a regular HTTP server
 const server = new (require('ws')).Server({port: (process.env.PORT || 3002)})
 
+server.use(cors())
+
 // Create a WebSocket server
 const wss = new WebSocketServer({ server: server });
 
