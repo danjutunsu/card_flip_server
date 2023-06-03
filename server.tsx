@@ -21,17 +21,6 @@ const server = createServer(app);
 
 const wss = new WebSocketServer({ server });
 
-// WebSocket server logic
-wss.on('connection', (socket) => {
-  // Handle WebSocket connections here
-});
-
-// Start the server
-server.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
-
-
 const clients = new Array
 
 wss.on('connection', function connection(ws, req) {
