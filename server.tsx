@@ -17,7 +17,7 @@ app.use(cors()); // Allow cross-origin requests
 const httpServer = http.createServer(app)
 const server = require('https').createServer(app);
 const wss = new WebSocketServer.Server({
-  'server': httpServer
+  'server': server
 })
 const clients = new Array
 
