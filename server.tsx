@@ -394,12 +394,12 @@ app.get('/games/turn', async (req, res) => {
 });
 
 app.get('/games/player1', async (req, res) => {
-  const { gameId } = req.query;
-  console.log(`GameId: ${gameId}`)
+  const { game_id } = req.query;
+  console.log(`GameId: ${game_id}`)
   try {
     const result = await pool.query(
       'SELECT player1_id FROM games WHERE id = $1',
-      [gameId]
+      [game_id]
     );
     if (result.rows && result.rows.length > 0) {
       const turnId = result.rows[0].player1_id;
