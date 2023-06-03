@@ -27,6 +27,22 @@ const heartbeatInterval = 25000; // 25 seconds
 
 server.listen(process.env.PORT, () => console.log('Server started on port ' + process.env.PORT));
 
+const heartbeat = () => {
+  clients.forEach((ws) => {
+    if (!ws.isAlive) {
+      // Client is inactive, terminate the connection
+      return ws.terminate();
+    }
+
+    // Set the client as inactive and send a heartbeat message
+    ws.isAlive = false;
+    ws.ping();
+  });
+};
+
+// Start the heartbeat interval
+const interval = setInterval(heartbeat, heartbeatInterval);
+
 wss.on('connection', function connection(ws, req) {
   let currentStatus = { value: '' }
   let hasUserId = false;
@@ -36,22 +52,6 @@ wss.on('connection', function connection(ws, req) {
   ws.on('pong', () => {
     ws.isAlive = true;
   });
-
-  const heartbeat = () => {
-    clients.forEach((ws) => {
-      if (!ws.isAlive) {
-        // Client is inactive, terminate the connection
-        return ws.terminate();
-      }
-  
-      // Set the client as inactive and send a heartbeat message
-      ws.isAlive = false;
-      ws.ping();
-    });
-  };
-
-  // Start the heartbeat interval
-  const interval = setInterval(heartbeat, heartbeatInterval);
 
   const userId = req.url.split('=')[1];
   ws.userId = userId;
