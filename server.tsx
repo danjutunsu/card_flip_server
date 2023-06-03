@@ -23,7 +23,7 @@ const wss = new WebSocketServer({ server });
 
 const clients = new Array
 
-const heartbeatInterval = 30000; // 30 seconds
+const heartbeatInterval = 25000; // 25 seconds
 
 server.listen(process.env.PORT, () => console.log('Server started on port ' + process.env.PORT));
 
