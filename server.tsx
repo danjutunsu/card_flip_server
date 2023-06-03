@@ -23,11 +23,35 @@ const wss = new WebSocketServer({ server });
 
 const clients = new Array
 
+const heartbeatInterval = 30000; // 30 seconds
+
 server.listen(process.env.PORT, () => console.log('Server started on port ' + process.env.PORT));
 
 wss.on('connection', function connection(ws, req) {
   let currentStatus = { value: '' }
   let hasUserId = false;
+
+  ws.isAlive = true;
+
+  ws.on('pong', () => {
+    ws.isAlive = true;
+  });
+
+  const heartbeat = () => {
+    clients.forEach((ws) => {
+      if (!ws.isAlive) {
+        // Client is inactive, terminate the connection
+        return ws.terminate();
+      }
+  
+      // Set the client as inactive and send a heartbeat message
+      ws.isAlive = false;
+      ws.ping();
+    });
+  };
+
+  // Start the heartbeat interval
+  const interval = setInterval(heartbeat, heartbeatInterval);
 
   const userId = req.url.split('=')[1];
   ws.userId = userId;
@@ -181,6 +205,9 @@ ws.on('message', function incoming(message) {
 
   // Handle the WebSocket connection being closed
 ws.on('close', function close() {
+
+  clearInterval(interval)
+
   console.log('WebSocket connection closed');
   console.log(`Client list after close:`)
   clients.forEach(element => {
