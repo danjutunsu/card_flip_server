@@ -9,11 +9,12 @@ const { body, validationResult } = require('express-validator');
 const dburl = process.env.DB_URL
 const dbpass = process.env.DB_PASSWORD
 const { WebSocketServer } = require('ws')
+const PORT = process.env.PORT;
 
 app.use(cors()); // Allow cross-origin requests
 
 const server = require('http').createServer(app);
-const wsServer = new WebSocketServer({ server });
+const wsServer = new WebSocketServer({ PORT });
 const clients = new Array
 
 wsServer.on('connection', function connection(ws, req) {
