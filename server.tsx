@@ -8,20 +8,16 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const dburl = process.env.DB_URL
 const dbpass = process.env.DB_PASSWORD
-const http = require('http')
-const port = process.env.PORT || 3002
 const { createServer } = require('http');
+const port = process.env.PORT || 3002
 const { Server: WebSocketServer } = require('ws');
 
 // Enable CORS for all routes
 app.use(cors());
 
 // Create a regular HTTP server
-// const server = new (require('ws')).Server({port: (process.env.PORT || 3002)})
+const server = createServer(app);
 
-// server.use(cors())
-
-// Create a WebSocket server
 const wss = new WebSocketServer({ server: app });
 
 const clients = new Array
