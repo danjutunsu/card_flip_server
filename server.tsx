@@ -23,6 +23,8 @@ const wss = new WebSocketServer({ server });
 
 const clients = new Array
 
+server.listen(process.env.PORT, () => console.log('Server started on port ' + process.env.PORT));
+
 wss.on('connection', function connection(ws, req) {
   let currentStatus = { value: '' }
   let hasUserId = false;
@@ -938,5 +940,3 @@ async function getUsernameByID(id) {
     client.release();
   }
 }
-
-app.listen(process.env.PORT, () => console.log('Server started on port ' + process.env.PORT));
