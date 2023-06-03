@@ -1,19 +1,32 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors'); // import the cors middleware
+const cors = require('cors');
+const { WebSocketServer } = require('ws');
+const https = require('https');
+const fs = require('fs');
+
 const app = express();
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
-const dburl = process.env.DB_URL
-const dbpass = process.env.DB_PASSWORD
-const { WebSocketServer } = require('ws')
+const dburl = process.env.DB_URL;
+const dbpass = process.env.DB_PASSWORD;
 
-app.use(cors()); // Allow cross-origin requests
+app.use(cors());
 
-const server = require('https').createServer(app);
+// Create an HTTPS server using the SSL certificate and private key
+const server = https.createServer(
+  {
+    key: fs.readFileSync('privateKey.key'),
+    cert: fs.readFileSync('certificate.crt'),
+  },
+  app
+);
+
+// Create a WebSocket server
 const wsServer = new WebSocketServer({ server });
+
 const clients = new Array
 
 wsServer.on('connection', function connection(ws, req) {
