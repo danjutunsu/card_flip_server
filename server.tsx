@@ -17,12 +17,12 @@ const { Server: WebSocketServer } = require('ws');
 app.use(cors());
 
 // Create a regular HTTP server
-const server = new (require('ws')).Server({port: (process.env.PORT || 3002)})
+// const server = new (require('ws')).Server({port: (process.env.PORT || 3002)})
 
-server.use(cors())
+// server.use(cors())
 
 // Create a WebSocket server
-const wss = new WebSocketServer({ server: server });
+const wss = new WebSocketServer({ server: app });
 
 const clients = new Array
 
@@ -196,9 +196,9 @@ ws.on('close', function close() {
   });
 });
 
-server.listen(process.env.WS || 3002, () => {
-  console.log(`WebSocket server listening on port ${process.env.WS}`);
-});
+// server.listen(process.env.WS || 3002, () => {
+//   console.log(`WebSocket server listening on port ${process.env.WS}`);
+// });
 
 const pool = new Pool({
     user: 'postgres',
