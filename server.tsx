@@ -17,7 +17,7 @@ const { Server: WebSocketServer } = require('ws');
 app.use(cors());
 
 // Create a regular HTTP server
-const server = createServer(app);
+const server = new (require('ws')).Server({port: (process.env.PORT || 3002)})
 
 // Create a WebSocket server
 const wss = new WebSocketServer({ server: server });
@@ -192,6 +192,10 @@ ws.on('close', function close() {
     clients.splice(index, 1);
   }
   });
+});
+
+server.listen(process.env.WS || 3002, () => {
+  console.log(`WebSocket server listening on port ${process.env.WS}`);
 });
 
 const pool = new Pool({
