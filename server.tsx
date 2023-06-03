@@ -1,16 +1,17 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors'); // import the cors middleware
-const app = express();
+const cors = require('cors');
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
-const dburl = process.env.DB_URL
-const dbpass = process.env.DB_PASSWORD
+const dburl = process.env.DB_URL;
+const dbpass = process.env.DB_PASSWORD;
 const { createServer } = require('http');
-const port = process.env.PORT || 3002
+const port = process.env.PORT || 3002;
 const { Server: WebSocketServer } = require('ws');
+
+const app = express();
 
 // Enable CORS for all routes
 app.use(cors());
@@ -18,7 +19,18 @@ app.use(cors());
 // Create a regular HTTP server
 const server = createServer(app);
 
-const wss = new WebSocketServer({ server: app });
+const wss = new WebSocketServer({ server });
+
+// WebSocket server logic
+wss.on('connection', (socket) => {
+  // Handle WebSocket connections here
+});
+
+// Start the server
+server.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+
 
 const clients = new Array
 
