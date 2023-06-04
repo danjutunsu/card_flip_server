@@ -48,7 +48,7 @@ const interval = setInterval(heartbeat, heartbeatInterval);
 
 setInterval(() => {
   clients.forEach((client) => {
-    client.send(JSON.stringify(new Date().toTimeString()));
+    client.send(new Date().toTimeString());
   });
 }, 1000);
 
