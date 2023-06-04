@@ -26,7 +26,7 @@ const clients = new Array
 server.listen(process.env.PORT, () => console.log('Server started on port ' + process.env.PORT));
 
 const heartbeat = () => {
-  wss.clients.forEach((ws) => {
+  clients.forEach((ws) => {
     if (!ws.isAlive) {
       console.log(`closing connection to ${ws.userId}`)
       // Client is inactive, terminate the connection
