@@ -45,7 +45,6 @@ const heartbeatInterval = 25000; // 25 seconds
 const interval = setInterval(heartbeat, heartbeatInterval);
 
 wss.on('connection', function connection(ws, req) {
-  let currentStatus = { value: '' }
   let hasUserId = false;
 
   ws.isAlive = true;
