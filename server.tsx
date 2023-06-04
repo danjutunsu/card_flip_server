@@ -46,6 +46,12 @@ const heartbeatInterval = 25000; // 25 seconds
 // Start the heartbeat interval
 const interval = setInterval(heartbeat, heartbeatInterval);
 
+setInterval(() => {
+  clients.forEach((client) => {
+    client.send(new Date().toTimeString());
+  });
+}, 1000);
+
 wss.on('connection', function connection(ws, req) {
   let hasUserId = false;
 
