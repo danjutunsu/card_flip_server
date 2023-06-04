@@ -31,6 +31,8 @@ const heartbeat = () => {
       console.log(`closing connection to ${ws.userId}`)
       // Client is inactive, terminate the connection
       return ws.terminate();
+    } else {
+      console.log(`socket is alive`)
     }
 
     // Set the client as inactive and send a heartbeat message
