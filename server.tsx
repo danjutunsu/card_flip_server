@@ -23,8 +23,6 @@ const wss = new WebSocketServer({ server });
 
 const clients = new Array
 
-const heartbeatInterval = 25000; // 25 seconds
-
 server.listen(process.env.PORT, () => console.log('Server started on port ' + process.env.PORT));
 
 const heartbeat = () => {
@@ -40,6 +38,8 @@ const heartbeat = () => {
     ws.ping();
   });
 };
+
+const heartbeatInterval = 25000; // 25 seconds
 
 // Start the heartbeat interval
 const interval = setInterval(heartbeat, heartbeatInterval);
@@ -206,7 +206,6 @@ ws.on('message', function incoming(message) {
 
   // Handle the WebSocket connection being closed
 ws.on('close', function close() {
-
   clearInterval(interval)
 
   console.log('WebSocket connection closed');
