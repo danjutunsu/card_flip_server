@@ -14,7 +14,7 @@ const { Server: WebSocketServer } = require('ws');
 const app = express();
 
 // Enable CORS for all routes
-app.use(cors());
+app.use(cors({ origin: 'https://triviafriends.onrender.com' }));
 
 // Create a regular HTTP server
 const server = createServer(app);
