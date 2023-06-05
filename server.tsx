@@ -21,6 +21,12 @@ app.use((req, res, next) => {
 // Create a regular HTTP server
 const server = createServer(app);
 
+// Enable CORS for all routes
+server.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'https://triviafriends.onrender.com');
+  next();
+});
+
 const wss = new WebSocketServer({ server });
 
 const clients = new Array
