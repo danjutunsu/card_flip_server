@@ -14,24 +14,16 @@ const { Server: WebSocketServer } = require('ws');
 const app = express();
 
 // Enable CORS for all routes
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://triviafriends.onrender.com');
-  next();
-});
+app.use(cors({ origin: 'https://triviafriends.onrender.com' }));
+
 // Create a regular HTTP server
 const server = createServer(app);
 
-// Enable CORS for all routes
-server.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://triviafriends.onrender.com');
-  next();
-});
-
 const wss = new WebSocketServer({ server });
 
-const clients = new Array
+const clients = new Array;
 
-server.listen(process.env.PORT, () => console.log('Server started on port ' + process.env.PORT));
+server.listen(port, () => console.log('Server started on port ' + port));
 
 const heartbeat = () => {
   clients.forEach((ws) => {
