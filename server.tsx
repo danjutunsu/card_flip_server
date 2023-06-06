@@ -25,6 +25,8 @@ const clients = new Array
 
 server.listen(process.env.PORT, () => console.log('Server started on port ' + process.env.PORT));
 
+app.listen(process.env.PORT, () => console.log('Server started on port ' + process.env.WS));
+
 const heartbeat = () => {
   clients.forEach((ws) => {
     if (!ws.isAlive) {
@@ -784,6 +786,8 @@ app.get('/points', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM points WHERE user_id = $1', [userId]);
     
+    res.setHeader('Access-Control-Allow-Origin', 'https://triviafriends.onrender.com');
+
     res.json(rows)
   } catch (error) {
     console.error(error);
