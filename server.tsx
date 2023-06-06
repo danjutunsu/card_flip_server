@@ -14,16 +14,16 @@ const { Server: WebSocketServer } = require('ws');
 const app = express();
 
 // Enable CORS for all routes
-app.use(cors);
+app.use(cors());
 
 // Create a regular HTTP server
 const server = createServer(app);
 
 const wss = new WebSocketServer({ server });
 
-const clients = new Array;
+const clients = new Array
 
-server.listen(port, () => console.log('Server started on port ' + port));
+server.listen(process.env.PORT, () => console.log('Server started on port ' + process.env.PORT));
 
 const heartbeat = () => {
   clients.forEach((ws) => {
