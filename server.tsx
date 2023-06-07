@@ -204,7 +204,7 @@ ws.on('message', function incoming(message) {
       console.log(`CLIENT ID: ${client.userId}`)
       if (client.userId === data.payload.user1.toString() || client.userId === data.payload.user2.toString()) {
         const refresh = data.payload;
-        console.log(`refreshing ${client.userId}`)
+        console.log(`refreshing ${client.userId }`)
 
         client.send(JSON.stringify({ refresh }))
       }
