@@ -786,8 +786,6 @@ app.get('/points', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM points WHERE user_id = $1', [userId]);
     
-    res.setHeader('Access-Control-Allow-Origin', 'https://triviafriends.onrender.com');
-
     res.json(rows)
   } catch (error) {
     console.error(error);
