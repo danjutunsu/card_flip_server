@@ -8,7 +8,7 @@ const { body, validationResult } = require('express-validator');
 const dbpass = process.env.DB_PASSWORD;
 const { createServer } = require('http');
 const port = process.env.PORT || 3001;
-const { Server: WebSocketServer } = require('ws');
+const { WebSocketServer } = require('ws');
 process.env.NODE_ENV = process.env.NODE_ENV || "development";
 
 let dbUrl;
@@ -26,16 +26,21 @@ const app = express();
 // Enable CORS for all routes
 app.use(cors());
 
+// define a route for the root path
+app.get('/', (req, res) => {
+  res.send('Hello, world!');
+});
+
 // Create a regular HTTP server
-const server = createServer(app);
+const server = app.listen(port, () => console.log('Server started on port ' + port));
 
 const wss = new WebSocketServer({ server });
 
 const clients = new Array
 
-// server.listen(process.env.PORT, () => console.log('Server started on port ' + process.env.PORT));
+server
 
-app.listen(port, () => console.log('Server started on port ' + port));
+// app.listen(port, () => console.log('Server started on port ' + port));
 
 const heartbeat = () => {
   clients.forEach((ws) => {
@@ -56,7 +61,7 @@ const heartbeat = () => {
 const heartbeatInterval = 25000; // 25 seconds
 
 // Start the heartbeat interval
-const interval = setInterval(heartbeat, heartbeatInterval);
+// const interval = setInterval(heartbeat, heartbeatInterval);
 
 setInterval(() => {
   clients.forEach((client) => {
@@ -65,6 +70,7 @@ setInterval(() => {
 }, 1000);
 
 wss.on('connection', function connection(ws, req) {
+  console.log(`CONNECTED TO WS ON BACKEND`)
   let hasUserId = false;
 
   ws.isAlive = true;
@@ -225,7 +231,7 @@ ws.on('message', function incoming(message) {
 
   // Handle the WebSocket connection being closed
 ws.on('close', function close() {
-  clearInterval(interval)
+  // clearInterval(interval)
 
   console.log('WebSocket connection closed');
   console.log(`Client list after close:`)
@@ -924,10 +930,7 @@ app.post('/correct', (req, res) => {
   // res.json(results);
 });
 
-// define a route for the root path
-app.get('/', (req, res) => {
-  res.send('Hello, world!');
-});
+
 
 ///-----------------------LOGIN-------------------------\\\
 
