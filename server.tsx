@@ -5,11 +5,21 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
-const dburl = process.env.DB_URL;
 const dbpass = process.env.DB_PASSWORD;
 const { createServer } = require('http');
-const port = process.env.PORT || 3002;
+const port = process.env.PORT || 3001;
 const { Server: WebSocketServer } = require('ws');
+process.env.NODE_ENV = process.env.NODE_ENV || "development";
+
+let dbUrl;
+
+if (process.env.NODE_ENV === "development") {
+  // Set local backend URL
+  dbUrl = process.env.LOCAL_URL;
+} else {
+  // Set production backend URL
+  dbUrl = process.env.DB_URL;
+}
 
 const app = express();
 
@@ -237,7 +247,7 @@ ws.on('close', function close() {
 
 const pool = new Pool({
     user: 'postgres',
-    host: dburl,
+    host: dbUrl,
     database: 'trivia',
     password: dbpass,
     port: 5432, // the default PostgreSQL port
