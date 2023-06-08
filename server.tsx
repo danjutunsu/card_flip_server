@@ -884,7 +884,7 @@ app.post('/users', async (req, res) => {
   if (userName && email && password) {
     try {
       const savedUser = await pool.query('INSERT INTO users (userName, email, password) VALUES ($1, $2, $3) RETURNING *', [userName, email, password]);
-      console.log("CREATED")
+      // console.log("CREATED")
       res.json(savedUser.rows[0]);
     }
     catch (error) {
@@ -929,8 +929,6 @@ app.post('/correct', (req, res) => {
   const results = { score: 7, total: 10 };
   // res.json(results);
 });
-
-
 
 ///-----------------------LOGIN-------------------------\\\
 
