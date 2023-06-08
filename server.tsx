@@ -570,7 +570,7 @@ app.put('/lobby', async (req, res) => {
     const updatedUser = `
     UPDATE lobby 
     SET status = CASE 
-    WHEN status = 'Idle' OR status = 'In Progress'
+    WHEN status = 'Idle'
     THEN 'Ready' 
     ELSE 'Idle' 
     END 
