@@ -211,8 +211,8 @@ ws.on('message', function incoming(message) {
     })
   }
 
-  if (data.payload.message === 'set genre') {
-    const genreToSet = data.payload.genre;
+  if (data.type === 'set_genre') {
+    const genreToSet = data.payload;
 
     clients.forEach((client) => {
       client.send(JSON.stringify({ genreToSet }))
@@ -464,23 +464,6 @@ app.get('/games/player1', async (req, res) => {
   }
 });
 
-app.get('/games/genre', async (req, res) => {
-  const { player1, player2 } = req.query;
-  try {
-    const getGameGenre = `
-      SELECT game_genre 
-      FROM games
-      WHERE (player1_id = $1 OR player2_id = $1) AND (player1_id = $2 OR player2_id = $2);
-    `;
-    const values = [player1, player2];
-    const result = await pool.query(getGameGenre, values);
-    res.json(result.rows[0]?.game_genre);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 app.put('/games/turn', async (req, res) => {
   const { player1, player2 } = req.body
   try {
@@ -505,8 +488,26 @@ app.put('/games/turn', async (req, res) => {
   }
 });
 
+app.get('/games/genre', async (req, res) => {
+  console.log(`GAME GENRE HERE`)
+  const { player1, player2 } = req.query;
+  try {
+    const getGameGenre = `
+      SELECT game_genre 
+      FROM games
+      WHERE (player1_id = $1 OR player2_id = $1) AND (player1_id = $2 OR player2_id = $2);
+    `;
+    const values = [player1, player2];
+    const result = await pool.query(getGameGenre, values);
+    res.json(result.rows[0]?.game_genre);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.put('/games/genre', async (req, res) => {
-  const { player1, player2, genre } = req.body
+  const { player1, player2, selectedGenre } = req.body
   try {
     const client = await pool.connect();
     const queryUpdateGenre = `
@@ -514,7 +515,8 @@ app.put('/games/genre', async (req, res) => {
     SET game_genre = $3
     WHERE (player1_id = $1 OR player2_id = $1) AND (player1_id = $2 OR player2_id = $2);
     `;
-    const values = [player1, player2, genre]
+    const values = [player1, player2, selectedGenre]
+    console.log(`putting genre with ${player1} ${player2} ${selectedGenre}`)
   await client.query(queryUpdateGenre, values);
     client.release();
     res.json({ success: true }); 
