@@ -78,11 +78,16 @@ wss.on('connection', function connection(ws, req) {
   ws.on('pong', () => {
     ws.isAlive = true;
   });
-
-  const userId = req.url.split('=')[1];
+  
+  const urlParams = new URLSearchParams(req.url.replace('/?', ''));
+  const userId = urlParams.get('userId');
+  const uuid = urlParams.get('uuid');
   ws.userId = userId;
+  ws.uuid = uuid;
 
   clients.forEach((element) => {
+    console.log(`UUID: ${element.uuid}`)
+    console.log(`UserId: ${element.userId}`)
     if (element.userId === ws.userId) {
       hasUserId = true;
     }
@@ -212,15 +217,18 @@ ws.on('message', function incoming(message) {
   }
 
   if (data.type === 'set_genre') {
+    console.log(`xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxGENRE CLICKED`)
+    console.log(`UUID: ${data.payload.uuid}`)
     const genreToSet = data.payload;
 
     clients.forEach((client) => {
-      client.send(JSON.stringify({ genreToSet }))
+      if (client.uuid === data.payload.uuid) {
+        client.send(JSON.stringify({ genreToSet }))
+      }
     })
   }
   
   if (data.type === 'connected') {
-    console.log(`connectad`)
     const connected = data.payload;
 
     clients.forEach((client) => {
