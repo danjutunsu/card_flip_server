@@ -567,26 +567,43 @@ app.post('/lobby', async (req, res) => {
 
 app.put('/lobby', async (req, res) => {
   const { userId } = req.query;
-  try {
-    const client = await pool.connect();
-    const updatedUser = `
-    UPDATE lobby 
-    SET status = CASE 
-    WHEN status = 'Idle'
-    THEN 'Ready' 
-    ELSE 'Idle' 
-    END 
-    WHERE user_id = $1 
-    RETURNING *;
-    `;
-    const valueUpdateUser = [userId];
-    const result = await client.query(updatedUser, valueUpdateUser);
-    client.release();
-    res.status(200).json(result.rows[0]);
-  } catch (error) {
-    console.error(error);
-    res.sendStatus(500);
-  }
+  const secretKey = process.env.JWT_SECRET;
+
+  // Obtain the token from the request (e.g., from headers)
+  const token = req.headers.authorization;
+
+  // Verify and decode the token
+  jwt.verify(token, secretKey, async (err, decodedToken) => {
+    if (err) {
+      // Token verification failed
+      console.log(`INVALID TOKEN`)
+      console.log(token)
+      console.log(secretKey)
+      console.log(decodedToken)
+      res.status(401).json({ error: 'Invalid token' });
+    } else {
+      console.log(`VALID TOKEN`)
+      try {
+        const client = await pool.connect();
+        const updatedUser = `
+          UPDATE lobby 
+          SET status = CASE 
+            WHEN status = 'Idle' THEN 'Ready' 
+            ELSE 'Idle' 
+          END 
+          WHERE user_id = $1 
+          RETURNING *;
+        `;
+        const valueUpdateUser = [userId];
+        const result = await client.query(updatedUser, valueUpdateUser);
+        client.release();
+        res.status(200).json(result.rows[0]);
+      } catch (error) {
+        console.error(error);
+        res.sendStatus(500);
+      }
+    }
+  });
 });
 
 app.put('/lobby/inprogress', async (req, res) => {
@@ -961,7 +978,7 @@ app.post('/login', [
   console.log(process.env.JWT_SECRET)
   // Generate a JWT token
   const JWT_SECRET = process.env.JWT_SECRET;
-  const token = jwt.sign({ id: user.id, username }, process.env.JWT_SECRET);
+  const token = jwt.sign({ id: user.id, username }, JWT_SECRET);
 
   try {
     const client = await pool.connect();
@@ -990,6 +1007,7 @@ async function getUserByUsername(username) {
     if (result.rows.length === 0) {
       return null;
     }
+    console.log(`======================================================USER BY USERNAME ` + result.rows[0].id)
     return result.rows[0];
   } finally {
     client.release();
