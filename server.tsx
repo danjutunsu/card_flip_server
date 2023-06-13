@@ -224,6 +224,8 @@ ws.on('message', function incoming(message) {
     clients.forEach((client) => {
       if (client.uuid === data.payload.uuid) {
         client.send(JSON.stringify({ genreToSet }))
+      } else {
+        console.log(`CLIENT ${client} UUID IS: ${client.uuid}`)
       }
     })
   }
@@ -749,11 +751,14 @@ app.get('/questions/genres', async (req, res) => {
 });
 
 app.get('/answers', async (req, res) => {
-  const { gameId } = req.query;
+  const { game_id, user_id } = req.query;
   try {
-    const result = await pool.query('SELECT * FROM answers WHERE game_id = $1', [gameId]);
-    const answers = result.rows;
-    res.json(answers);
+    const result = await pool.query('SELECT * FROM answers WHERE game_id = $1 AND user_id = $2', [game_id, user_id]);
+    const answers = result;
+    console.log(`GAMEID: ${game_id}`)
+    console.log(`USERID: ${user_id}`)
+    console.log(`ANSWERS: ${answers}`)
+    res.json(result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).send('An error occurred while retrieving the answers');
@@ -836,6 +841,24 @@ app.get('/points', async (req, res) => {
   }
 });
 
+app.post('/points', async (req, res) => {
+  const { userId } = req.body;
+  if (userId) {
+    try {
+      const savedUser = await pool.query('INSERT INTO points (user_id, points, total_guess, total_correct, total_incorrect, correct_round, incorrect_round, total_round) VALUES ($1, 0, 0, 0, 0, 0, 0, 0)', [userId]);
+      
+      // console.log("CREATED")
+      // res.json(savedUser.rows[0]);
+    }
+    catch (error) {
+      console.error(error);
+      res.status(500).send('An error occurred while creating new user in points');
+    }
+  } else {
+    res.status(500).send('UserId required to create new user in points');
+  }
+});
+
 app.get('/username', async (req, res) => {
   const { userId } = req.query;
   try {
@@ -848,9 +871,9 @@ app.get('/username', async (req, res) => {
 });
 
 app.get('/guesses', async (req, res) => {
-  const { gameId } = req.query;
+  const { gameId, userId } = req.query;
   try {
-    const result = await pool.query('SELECT * FROM guesses WHERE game_id = $1', [gameId]);
+    const result = await pool.query('SELECT * FROM guesses WHERE game_id = $1 AND user_id = $2', [gameId, userId]);
     const guesses = result.rows;
     data = guesses;
     res.json(guesses);
@@ -911,6 +934,7 @@ app.post('/users', async (req, res) => {
   if (userName && email && password) {
     try {
       const savedUser = await pool.query('INSERT INTO users (userName, email, password) VALUES ($1, $2, $3) RETURNING *', [userName, email, password]);
+      
       // console.log("CREATED")
       res.json(savedUser.rows[0]);
     }
