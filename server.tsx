@@ -884,8 +884,8 @@ app.get('/guesses', async (req, res) => {
 });
 
 app.put('/points', async (req, res) => {      
-  const { userId, points, total } = req.body;
-  if (!userId || !points || !total) {
+  const { user_id, points, total } = req.body;
+  if (!user_id || !points || !total) {
     return res.status(400).json({ error: 'userId, points, and total required' });
   }
   try {
@@ -901,7 +901,7 @@ app.put('/points', async (req, res) => {
           total_round = $3
         WHERE user_id = $1;
       `;
-    const valuesUpdatePoints = [userId, points, total];
+    const valuesUpdatePoints = [user_id, points, total];
     const result = await pool.query(queryUpdatePoints, valuesUpdatePoints);
     const savedPoints = result.rows[0];
     res.json(savedPoints);
