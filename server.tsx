@@ -119,7 +119,7 @@ ws.on('message', function incoming(message) {
   const data = JSON.parse(message)
 
   // Send all clients a message to navigate to the stats page to force navigation at game's end
-  if (data.type === 'end') {
+  if (data.payload === 'end') {
     clients.forEach((client) => {
       const end_game = data.payload;
       console.log(`Sending end_game message`)
