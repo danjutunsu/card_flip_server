@@ -435,6 +435,66 @@ app.put('/games/status', async (req, res) => {
   }
 });
 
+app.get('/games/player_turn', async (req, res) => {
+  const { player, game_id } = req.query;
+  try {
+    // Execute the query and get the result
+    const result = await pool.query(
+      `SELECT 
+        CASE 
+          WHEN $1 = player1_id THEN player1_turn
+          WHEN $1 = player2_id THEN player2_turn
+        END AS turn
+      FROM games
+      WHERE id = $2`,
+      [player, game_id]
+    );
+    console.log(`player: ${player}, game_id: ${game_id}`);
+
+    if (result.rows.length > 0) {
+      const playerTurn = result.rows[0].turn;
+      console.log(`player turn: ${playerTurn}`)
+      res.status(200).json({ playerTurn: playerTurn });
+    } else {
+      res.status(404).json({ error: 'Game not found' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+app.put('/games/player_turn', async (req, res) => {
+  const { player, game_id } = req.body;
+  console.log(`PLAYER: ${player} GAMEs: ${game_id}`)
+  try {
+    const client = await pool.connect();
+    const queryUpdateStatus = `
+    UPDATE games
+    SET player1_turn = CASE
+      WHEN $1 = player1_id THEN 
+        CASE WHEN player1_turn = 2 THEN 0 ELSE player1_turn + 1 END
+      ELSE player1_turn
+    END,
+    player2_turn = CASE
+      WHEN $1 = player2_id THEN 
+        CASE WHEN player2_turn = 2 THEN 0 ELSE player2_turn + 1 END
+      ELSE player2_turn
+    END
+    WHERE id = $2`;
+
+    const values = [player, game_id];
+    await client.query(queryUpdateStatus, values);
+    client.release();
+    console.log(`Player: ${player} GameID: ${game_id}`);
+
+    res.json({ success: true }); 
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred while updating the player turn');
+  }
+});
+
+
 app.get('/games/turn', async (req, res) => {
   const { gameId } = req.query;
   console.log(`GameId: ${gameId}`)
