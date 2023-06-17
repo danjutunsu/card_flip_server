@@ -608,7 +608,7 @@ app.get('/lobby', async (req, res) => {
     const resultGetUsers = await client.query(queryGetUsers, values);
     client.release();
     const users = resultGetUsers.rows;
-    const allUsersReady = users.every(user => user.status === 'Ready');
+    const allUsersReady = users.every(user => user.status === 'Ready' || user.status === 'In Progress');
     res.json({ users, allUsersReady }); // Return users and flag indicating if all users are ready
   } catch (error) {
     console.error(error);
@@ -945,9 +945,12 @@ app.get('/guesses', async (req, res) => {
 
 app.put('/points', async (req, res) => {      
   const { user_id, points, total } = req.body;
-  if (!user_id || !points || !total) {
-    return res.status(400).json({ error: 'userId, points, and total required' });
-  }
+  console.log(`USERIDEE: ${user_id}`)
+  console.log(`POINTS: ${points}`)
+  console.log(`TOTAL: ${total}`)
+  // if (!user_id || !points || !total) {
+  //   return res.status(400).json({ error: 'userId, points, and total required' });
+  // }
   try {
     const queryUpdatePoints = `
         UPDATE points
