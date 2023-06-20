@@ -206,7 +206,7 @@ ws.on('message', function incoming(message) {
 
   if (data.type === 'refresh') {
     clients.forEach((client) => {
-      console.log(`CLIENT ID: ${client.userId}`)
+      console.log(`CLIENT ID: ${client.userId} REFRESHING ------------------------------------------------`)
       // if (client.userId === data.payload.user1.toString() || client.userId === data.payload.user2.toString()) {
         const refresh = data.payload;
         console.log(`refreshing ${client.userId }`)
@@ -935,8 +935,10 @@ app.get('/guesses', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM guesses WHERE game_id = $1 AND user_id = $2', [gameId, userId]);
     const guesses = result.rows;
-    data = guesses;
-    res.json(guesses);
+    guesses.forEach(element => {
+      console.log(element)
+    });
+    res.json(result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).send('An error occurred while retrieving the guesses');
@@ -946,7 +948,7 @@ app.get('/guesses', async (req, res) => {
 app.put('/points', async (req, res) => {      
   const { user_id, points, total } = req.body;
   console.log(`USERIDEE: ${user_id}`)
-  console.log(`POINTS: ${points}`)
+  console.log(`ADDED POINTS: ${points}`)
   console.log(`TOTAL: ${total}`)
   // if (!user_id || !points || !total) {
   //   return res.status(400).json({ error: 'userId, points, and total required' });
