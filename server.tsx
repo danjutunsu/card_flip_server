@@ -901,11 +901,46 @@ app.get('/points', async (req, res) => {
   }
 });
 
+app.get('/points/game', async (req, res) => {
+  const { user_id, game_id } = req.query;
+  try {
+    const { rows } = await pool.query('SELECT * FROM points WHERE user_id = $1 AND game_id = $2', [user_id, game_id]);
+    console.log(`server-side gameid: ${game_id}`)
+    
+    if (rows.length > 0) {
+      res.status(200).json(rows[0]);
+    } else {
+      res.status(404).json({ message: 'User ID and game ID not found' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred while retrieving the points');
+  }
+});
+
 app.post('/points', async (req, res) => {
   const { userId } = req.body;
   if (userId) {
     try {
       const savedUser = await pool.query('INSERT INTO points (user_id, points, total_guess, total_correct, total_incorrect, correct_round, incorrect_round, total_round) VALUES ($1, 0, 0, 0, 0, 0, 0, 0)', [userId]);
+      
+      // console.log("CREATED")
+      // res.json(savedUser.rows[0]);
+    }
+    catch (error) {
+      console.error(error);
+      res.status(500).send('An error occurred while creating new user in points');
+    }
+  } else {
+    res.status(500).send('UserId required to create new user in points');
+  }
+});
+
+app.post('/points/game', async (req, res) => {
+  const { user_id, game_id } = req.body;
+  if (user_id) {
+    try {
+      const savedUser = await pool.query('INSERT INTO points (user_id, points, total_guess, total_correct, total_incorrect, correct_round, incorrect_round, total_round, game_id) VALUES ($1, 0, 0, 0, 0, 0, 0, 0, $2)', [user_id, game_id]);
       
       // console.log("CREATED")
       // res.json(savedUser.rows[0]);
@@ -967,6 +1002,38 @@ app.put('/points', async (req, res) => {
         WHERE user_id = $1;
       `;
     const valuesUpdatePoints = [user_id, points, total];
+    const result = await pool.query(queryUpdatePoints, valuesUpdatePoints);
+    const savedPoints = result.rows[0];
+    res.json(savedPoints);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred while saving the points');
+  }
+});
+
+
+app.put('/points/game', async (req, res) => {      
+  const { user_id, points, total, game_id } = req.body;
+  console.log(`USERID: ${user_id}`)
+  console.log(`ADDED POINTS: ${points}`)
+  console.log(`TOTAL: ${total}`)
+  // if (!user_id || !points || !total) {
+  //   return res.status(400).json({ error: 'userId, points, and total required' });
+  // }
+  try {
+    const queryUpdatePoints = `
+        UPDATE points
+        SET
+          points = points + $2,
+          total_guess = total_guess + $3,
+          total_correct = total_correct + $2,
+          total_incorrect = total_incorrect + ($3 - $2),
+          correct_round = $2,
+          incorrect_round = $3 - $2,
+          total_round = $3
+        WHERE user_id = $1 AND game_id = $4;
+      `;
+    const valuesUpdatePoints = [user_id, points, total, game_id];
     const result = await pool.query(queryUpdatePoints, valuesUpdatePoints);
     const savedPoints = result.rows[0];
     res.json(savedPoints);
