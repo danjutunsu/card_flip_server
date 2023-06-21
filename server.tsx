@@ -435,6 +435,28 @@ app.put('/games/status', async (req, res) => {
   }
 });
 
+
+app.put('/games/status/reset', async (req, res) => {
+  const { player1, player2 } = req.body;
+  try {
+    const client = await pool.connect();
+    const queryUpdateStatus = `
+    UPDATE games
+    SET game_status = 0
+    WHERE (player1_id = $1 OR player2_id = $1) AND (player1_id = $2 OR player2_id = $2);
+    `;
+    const values = [player1, player2];
+    await client.query(queryUpdateStatus, values);
+    client.release();
+    console.log(`Player1: ${player1} Player2: ${player2}`)
+
+    res.json({ success: true }); 
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred while updating the game status');
+  }
+});
+
 app.get('/games/player_turn', async (req, res) => {
   const { player, game_id } = req.query;
   try {
