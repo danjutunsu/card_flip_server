@@ -1145,6 +1145,27 @@ app.get('/users/invite', async (req, res) => {
   }
 });
 
+app.get('/users/email', async (req, res) => {
+  try {
+    const { email } = req.query;
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+
+    if (result.rows.length > 0) {
+      // Email exists in the database
+      console.log('Email exists');
+      res.status(200).json({ exists: true });
+    } else {
+      // Email doesn't exist in the database
+      console.log('Email does not exist');
+      res.status(200).json({ exists: false });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error checking email');
+  }
+});
+
+
 // define an endpoint to submit guesses from the second player
 app.post('/correct', (req, res) => {
   // code to process guesses from request body
