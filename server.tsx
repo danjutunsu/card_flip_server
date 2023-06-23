@@ -10,6 +10,7 @@ const { createServer } = require('http');
 const port = process.env.PORT || 3001;
 const { WebSocketServer } = require('ws');
 process.env.NODE_ENV = process.env.NODE_ENV || "development";
+const { OAuth2Client } =require("google-auth-library");
 
 let dbUrl;
 
@@ -31,14 +32,29 @@ app.get('/', (req, res) => {
   res.send('Hello, world!');
 });
 
+async function verify(client_id, jwtToken) {
+  const client = new OAuth2Client(client_id);
+  // Call the verifyIdToken to
+  // varify and decode it
+  const ticket = await client.verifyIdToken({
+      idToken: jwtToken,
+      audience: client_id,
+  });
+  // Get the JSON with all the user info
+  const payload = ticket.getPayload();
+  // This is a JSON object that contains
+  // all the user info
+  return payload;
+}
+
 // Create a regular HTTP server
 const server = app.listen(port, () => console.log('Server started on port ' + port));
 
 const wss = new WebSocketServer({ server });
 
 const clients = new Array
+const clientId = '376031314448-4tudk4nv5fose7kvfoffrqu8oen54v60.apps.googleusercontent.com';
 
-server
 
 // app.listen(port, () => console.log('Server started on port ' + port));
 
@@ -631,6 +647,8 @@ app.get('/lobby', async (req, res) => {
     client.release();
     const users = resultGetUsers.rows;
     const allUsersReady = users.every(user => user.status === 'Ready' || user.status === 'In Progress');
+    
+    console.log(`USERS::::${users[0]}`)
     res.json({ users, allUsersReady }); // Return users and flag indicating if all users are ready
   } catch (error) {
     console.error(error);
@@ -646,6 +664,7 @@ app.post('/lobby', async (req, res) => {
     const queryUpdatePoints = `
     INSERT INTO lobby (user_id, username, status)
     VALUES ($1, $2, 'Idle');
+    ON CONFLICT (user_id) DO UPDATE SET username = $2;
     `;
     const valuesUpdatePoints = [userId, username];
     const resultUpdatePoints = await client.query(queryUpdatePoints, valuesUpdatePoints);
@@ -1174,7 +1193,7 @@ app.post('/login', [
       ON CONFLICT (user_id) DO UPDATE SET username = $2;
     `;
   
-    const valuesUpdatePoints = [user.id, username];
+    const valuesUpdatePoints = [user.id, user.username];
     const resultUpdatePoints = await client.query(queryUpdatePoints, valuesUpdatePoints);
     client.release()
   }
@@ -1186,6 +1205,73 @@ app.post('/login', [
   res.json({ token, userId: user.id });
 });
 
+// Define the login route for google oauth
+app.post('/login/google', [
+  // Validate the request body
+  body('email').notEmpty()
+], async (req, res) => {
+  // Check if the request body is valid
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  // Check if the user exists and the password is correct
+  const { email } = req.body;
+  const user = await getUserByEmail(email);
+  if (!user) {
+    console.log("NULL USER")
+    return res.status(401).json({ error: 'Invalid username or password' });
+  }
+  if (!bcrypt.compare(email, user.email)) {
+    console.log(`EMAIL:${email} USER EMAIL:${user.email}`)
+    console.log("EMAILS DONT MATCH")
+    return res.status(401).json({ error: 'Invalid username or password' });
+  }
+  console.log("GENERATING A TOKEN")
+  console.log(process.env.JWT_SECRET)
+  // Generate a JWT token
+  const JWT_SECRET = process.env.JWT_SECRET;
+  const token = jwt.sign({ id: user.id, email }, JWT_SECRET);
+
+  try {
+    const client = await pool.connect();
+    const queryUpdatePoints = `
+      INSERT INTO lobby (user_id, username, status)
+      VALUES ($1, $2, 'Idle')
+      ON CONFLICT (user_id) DO UPDATE SET username = $2;
+    `;
+  
+    const valuesUpdatePoints = [user.id, user.username];
+    const resultUpdatePoints = await client.query(queryUpdatePoints, valuesUpdatePoints);
+    client.release()
+  }
+  catch (error) {
+    console.error(error);
+  }  
+
+  // Return the token and user ID to the frontend
+  res.json({ token, userId: user.id, username: user.username });
+});
+
+app.post('/verify', (req, res) => {
+  const { token } = req.body;
+
+  console.log(`TOKEN: ${token}`)
+
+  // Call the verify function with the token
+  verify(clientId, token)
+    .then((payload) => {
+      console.log(`verify token: ${payload}`)
+      // Send the user information as the response
+      res.json(payload);
+    })
+    .catch((error) => {
+      // Handle the verification error
+      res.status(400).json({ error: 'Verification failed' });
+    });
+});
+
 async function getUserByUsername(username) {
   const client = await pool.connect();
   try {
@@ -1194,6 +1280,21 @@ async function getUserByUsername(username) {
       return null;
     }
     console.log(`======================================================USER BY USERNAME ` + result.rows[0].id)
+    return result.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+async function getUserByEmail(email) {
+  const client = await pool.connect();
+  console.log(`EMAIL: ${email}`)
+  try {
+    const result = await client.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (result.rows.length === 0) {
+      return null;
+    }
+    console.log(`======================================================USER BY email ` + result.rows[0].id)
     return result.rows[0];
   } finally {
     client.release();
