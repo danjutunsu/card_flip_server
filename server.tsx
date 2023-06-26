@@ -931,9 +931,9 @@ app.post('/answers', async (req, res) => {
 });
 
 app.get('/points', async (req, res) => {
-  const { userId } = req.query;
+  const { userId, gameId } = req.query;
   try {
-    const { rows } = await pool.query('SELECT * FROM points WHERE user_id = $1', [userId]);
+    const { rows } = await pool.query('SELECT * FROM points WHERE user_id = $1 AND game_id = $2', [userId, gameId]);
     
     res.json(rows)
   } catch (error) {
