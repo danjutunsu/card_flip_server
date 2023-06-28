@@ -144,6 +144,15 @@ ws.on('message', function incoming(message) {
     })
   }
 
+  if (data.payload === 'start') {
+    clients.forEach((client) => {
+      const start_game = data.payload;
+      console.log(`Sending start_game message`)
+  
+      client.send(JSON.stringify({ start_game }))
+    })
+  }
+
   if (data.payload === 'reset') {
 
     clients.forEach((client) => {
